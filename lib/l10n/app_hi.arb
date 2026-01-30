@@ -1,0 +1,12 @@
+{
+  "@@locale": "hi",
+
+  "appTitle": "Workyo",
+  "selectLanguage": "भाषा चुनें",
+  "english": "अंग्रेज़ी",
+  "malayalam": "मलयालम",
+  "hindi": "हिंदी",
+  "continueText": "जारी रखें",
+  "createAccount": "खाता बनाएँ"
+ 
+}
