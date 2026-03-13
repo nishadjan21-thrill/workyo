@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "245055589810",
+    "project_id": "workyo-d067d",
+    "storage_bucket": "workyo-d067d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:245055589810:android:86161136e23c8b1e3a68ab",
+        "android_client_info": {
+          "package_name": "com.example.workyo"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCqqiuAsq9EPYchphRk7LT9JIAvZ1Igd4c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -3,10 +3,13 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:workyo/l10n/app_localizations.dart';
 import 'package:workyo/providers/languageprovider.dart';
-import 'package:workyo/router.dart';
+import 'package:workyo/router/app_router.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   final languageProvider = LanguageProvider();
   await languageProvider.loadSavedLocale();
   runApp(
@@ -27,6 +30,7 @@ class Workyo extends StatelessWidget {
       builder: (context, languageProvider, _) {
         return MaterialApp.router(
           routerConfig: appRouter,
+          
           locale: languageProvider.locale,
           supportedLocales: const [Locale('en'), Locale('ml'), Locale('hi')],
 

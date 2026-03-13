@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:workyo/l10n/app_localizations.dart';
+import 'package:workyo/theme/app_textstyles.dart';
 
 class PasswordInputField extends StatefulWidget {
   final TextEditingController controller;
@@ -14,12 +16,12 @@ class _PasswordInputFieldState extends State<PasswordInputField> {
 
   @override
   Widget build(BuildContext context) {
-    return TextFormField(
+    return TextFormField(style: AppTextStyles.subtitle,
       controller: widget.controller,
       obscureText: _obscureText,
       decoration: InputDecoration(
-        labelText: "Password",
-        hintText: "Create a password",
+        labelText: AppLocalizations.of(context)!.password,
+
         prefixIcon: const Icon(Icons.lock),
         suffixIcon: IconButton(
           icon: Icon(_obscureText ? Icons.visibility_off : Icons.visibility),

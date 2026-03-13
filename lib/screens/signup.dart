@@ -1,58 +1,137 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:workyo/l10n/app_localizations.dart';
+
 import 'package:workyo/widgets/continuebutton.dart';
 import 'package:workyo/widgets/emailfield.dart';
+import 'package:workyo/widgets/fullnamefield.dart';
 import 'package:workyo/widgets/passwordfield.dart';
 import 'package:workyo/widgets/phonefield.dart';
-import 'package:go_router/go_router.dart';
+import 'package:workyo/widgets/responsivescreen.dart';
+import 'package:workyo/services/auth_service.dart';
 
-class SignUpScreen extends StatelessWidget {
-  SignUpScreen({super.key});
+import '../widgets/app_page.dart';
+import '../theme/app_spacing.dart';
+import '../theme/app_textstyles.dart';
+import '../theme/app_colors.dart';
+
+class SignUpScreen extends StatefulWidget {
+  const SignUpScreen({super.key});
+
+  @override
+  State<SignUpScreen> createState() => _SignUpScreenState();
+}
+
+class _SignUpScreenState extends State<SignUpScreen> {
+  final authService = AuthService();
 
   final phoneController = TextEditingController();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
-  final _formKey = GlobalKey<FormState>();
+  final fullnameController = TextEditingController();
+
+  bool isLoading = false;
+
+  @override
+  void dispose() {
+    phoneController.dispose();
+    emailController.dispose();
+    passwordController.dispose();
+    fullnameController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleSignUp() async {
+    setState(() => isLoading = true);
+
+    final user = await authService.signUp(
+      emailController.text.trim(),
+      passwordController.text.trim(),
+      phoneController.text.trim(),
+      fullnameController.text.trim(),
+    );
+
+    setState(() => isLoading = false);
+
+    if (!mounted) return;
+
+    if (user != null) {
+      context.go('/home');
+    } else {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Sign up failed')));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-        backgroundColor: Colors.white,
-        body: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(height: 70),
-              Center(
-                child: Image.asset(
-                  'assets/images/splashscreen.png',
-                  height: 100,
-                ),
-              ),
-              SizedBox(height: 76),
-              Center(
-                child: Text(
-                  AppLocalizations.of(context)!.createAccount,
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
-                ),
-              ),
-              SizedBox(height: 76),
+    final height = MediaQuery.of(context).size.height;
 
-              PhoneInputField(controller: phoneController),
-              SizedBox(height: 30),
-              EmailInputField(controller: emailController),
-              SizedBox(height: 30),
-              PasswordInputField(controller: passwordController),
-              SizedBox(height: 50),
-              ContinueButton(
-                text: AppLocalizations.of(context)!.createAccount,
-                onPressed: () {
-                  // Handle continue button press
-                },
+    return AppPage(
+      child: ResponsiveScreen(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(height: height * 0.06),
+
+            Center(
+              child: Image.asset(
+                'assets/images/splashscreen.png',
+                height: height * 0.12,
               ),
-            ],
-          ),
+            ),
+
+            AppSpacing.section,
+
+            Center(
+              child: Text(
+                AppLocalizations.of(context)!.createAccount,
+                style: AppTextStyles.header,
+              ),
+            ),
+
+            AppSpacing.section,
+
+            FullNameInputField(controller: fullnameController),
+
+            AppSpacing.small,
+
+            PhoneInputField(controller: phoneController),
+
+            AppSpacing.small,
+
+            EmailInputField(controller: emailController),
+
+            AppSpacing.small,
+
+            PasswordInputField(controller: passwordController),
+
+            AppSpacing.small,
+
+            TextButton(
+              onPressed: () => context.go('/login'),
+              child: Text(
+                AppLocalizations.of(context)!.alreadyHaveAccount,
+                style: const TextStyle(color: AppColors.primary),
+              ),
+            ),
+
+            const Spacer(),
+
+            ContinueButton(
+              text: isLoading
+                  ? "Please wait..."
+                  : AppLocalizations.of(context)!.createAccount,
+              onPressed: isLoading
+                  ? null
+                  : () async {
+                      await _handleSignUp();
+                    },
+            ),
+
+            SizedBox(height: height * 0.02),
+          ],
         ),
       ),
     );

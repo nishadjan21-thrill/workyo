@@ -2,29 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:workyo/l10n/app_localizations.dart';
 import 'package:workyo/theme/app_textstyles.dart';
 
-class PhoneInputField extends StatelessWidget {
+class Locationfield extends StatelessWidget {
   final TextEditingController controller;
 
-  const PhoneInputField({super.key, required this.controller});
+  const Locationfield({super.key, required this.controller});
 
   @override
   Widget build(BuildContext context) {
     return TextFormField(
       style: AppTextStyles.subtitle,
       controller: controller,
-      keyboardType: TextInputType.phone,
+      keyboardType: TextInputType.text,
       decoration: InputDecoration(
-        labelText: AppLocalizations.of(context)!.phoneNumber,
-
-        prefixIcon: const Icon(Icons.phone),
+        labelText: AppLocalizations.of(context)!.location,
+        prefixIcon: const Icon(Icons.location_on),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
       ),
       validator: (value) {
         if (value == null || value.isEmpty) {
-          return "Phone number is required";
-        }
-        if (value.length != 10) {
-          return "Enter a valid 10-digit phone number";
+          return "Location is required";
         }
         return null;
       },

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:workyo/l10n/app_localizations.dart';
+import 'package:workyo/theme/app_textstyles.dart';
 
 class EmailInputField extends StatelessWidget {
   final TextEditingController controller;
@@ -8,11 +10,12 @@ class EmailInputField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return TextFormField(
+      style: AppTextStyles.subtitle,
       controller: controller,
       keyboardType: TextInputType.emailAddress,
       decoration: InputDecoration(
-        labelText: "Email Address",
-        hintText: "Enter your email",
+        labelText: AppLocalizations.of(context)!.email,
+
         prefixIcon: const Icon(Icons.email),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
       ),

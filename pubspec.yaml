@@ -39,6 +39,15 @@ dependencies:
   cupertino_icons: ^1.0.8
   provider: ^6.1.2
   go_router: ^14.2.0
+  firebase_auth: ^6.1.4
+  cloud_firestore: ^6.1.2
+  firebase_core: ^4.4.0
+  firebase_storage: ^13.0.6
+  image_picker: ^1.0.7
+  geolocator: ^10.1.0
+  geoflutterfire_plus: ^0.0.5
+  http: ^1.2.0
+  flutter_image_compress: ^2.3.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

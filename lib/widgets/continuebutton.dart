@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:workyo/l10n/app_localizations.dart';
+import 'package:workyo/theme/app_buttons.dart';
+import 'package:workyo/theme/app_colors.dart';
 
 class ContinueButton extends StatelessWidget {
-  final VoidCallback onPressed;
   final String text;
+  final Future<void> Function()? onPressed;
 
   const ContinueButton({
     super.key,
-    required this.onPressed,
     required this.text,
+    required this.onPressed,
   });
 
   @override
@@ -17,25 +18,14 @@ class ContinueButton extends StatelessWidget {
       width: double.infinity,
       height: 50,
       child: ElevatedButton(
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF1E6CFF),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
-        ),
-        child: Text(
-          text,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
+        style: AppButtons.primary,
+        onPressed: onPressed == null
+            ? null
+            : () async {
+                await onPressed!();
+              },
+        child: Text(text, style: TextStyle(color: AppColors.textPrimary)),
       ),
     );
   }
 }
-
-
-

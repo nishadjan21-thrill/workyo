@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:workyo/widgets/continuebutton.dart';
-import 'package:workyo/widgets/languagebutton.dart';
-import 'package:workyo/providers/languageprovider.dart';
-
 import 'package:go_router/go_router.dart';
 
+import 'package:workyo/providers/languageprovider.dart';
+import 'package:workyo/widgets/continuebutton.dart';
+import 'package:workyo/widgets/languagebutton.dart';
+import 'package:workyo/widgets/responsivescreen.dart';
+
 import '../l10n/app_localizations.dart';
+import '../widgets/app_page.dart';
+import '../theme/app_spacing.dart';
+import '../theme/app_textstyles.dart';
+import '../theme/app_colors.dart';
 
 class LanguageSelect extends StatelessWidget {
   const LanguageSelect({super.key});
@@ -20,63 +25,61 @@ class LanguageSelect extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Consumer<LanguageProvider>(
-      builder: (context, languageProvider, child) {
-        return SafeArea(
-          child: Scaffold(
-            backgroundColor: Colors.white,
-            body: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                children: [
-                  const SizedBox(height: 70),
-                  Image.asset('assets/images/splashscreen.png', height: 100),
-                  const SizedBox(height: 24),
-                  Text(
-                    AppLocalizations.of(context)!.selectLanguage,
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
-                  ),
-                  const SizedBox(height: 24),
+      builder: (context, languageProvider, _) {
+        final height = MediaQuery.of(context).size.height;
 
-                  ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: languages.length,
-                    itemBuilder: (context, index) {
-                      final language = languages[index];
+        return AppPage(
+          child: ResponsiveScreen(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
 
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: LanguageOptionTile(
-                          title: language["title"]!,
-                          subtitle: language["subtitle"]!,
-                          isSelected:
-                              languageProvider.locale.languageCode ==
-                              language["code"],
-                          onTap: () {
-                            languageProvider.setLocale(
-                              Locale(language["code"]!),
-                            );
-                          },
-                        ),
-                      );
-                    },
-                  ),
+                SizedBox(height: height * 0.08),
 
-                  const Spacer(),
+                Image.asset(
+                  'assets/images/splashscreen.png',
+                  height: height * 0.12,
+                ),
 
-                  ContinueButton(
-                    text: AppLocalizations.of(context)!.selectLanguage,
-                    onPressed: () {
-                      context.push('/signup');
-                      debugPrint(
-                        "Locale: ${languageProvider.locale.languageCode}",
-                      );
-                    },
-                  ),
+                AppSpacing.section,
 
-                  const SizedBox(height: 16),
-                ],
-              ),
+                Text(
+                  AppLocalizations.of(context)!.selectLanguage,
+                  style: AppTextStyles.header,
+                  textAlign: TextAlign.center,
+                ),
+
+                AppSpacing.section,
+
+                ...languages.map((language) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: LanguageOptionTile(
+                      title: language["title"]!,
+                      subtitle: language["subtitle"]!,
+                      isSelected:
+                          languageProvider.locale.languageCode ==
+                          language["code"],
+                      onTap: () {
+                        languageProvider.setLocale(
+                          Locale(language["code"]!),
+                        );
+                      },
+                    ),
+                  );
+                }),
+
+                const Spacer(),
+
+                ContinueButton(
+                  text: AppLocalizations.of(context)!.continueText,
+                  onPressed: () async {
+                    context.go('/signup');
+                  },
+                ),
+
+                AppSpacing.small,
+              ],
             ),
           ),
         );
