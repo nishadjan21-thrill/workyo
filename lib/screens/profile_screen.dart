@@ -9,19 +9,13 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:workyo/theme/app_buttons.dart';
-import 'package:workyo/theme/app_colors.dart';
 import 'package:workyo/theme/app_textstyles.dart';
-import 'package:workyo/widgets/locationfield.dart';
 
 import '../../models/job_model.dart';
 import '../../models/worker_model.dart';
 import '../../services/firestore_service.dart';
-
-import '../../widgets/responsivescreen.dart';
-import '../../widgets/continuebutton.dart';
-import '../../widgets/fullnamefield.dart';
-import '../../widgets/phonefield.dart';
 import '../../widgets/app_card.dart';
+import '../../widgets/text_field.dart';
 
 class ProfileSetupScreen extends StatefulWidget {
   const ProfileSetupScreen({super.key});
@@ -182,18 +176,21 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     final uid = FirebaseAuth.instance.currentUser!.uid;
 
     final snapshot = await FirebaseFirestore.instance
+        .collection("workers")
+        .doc(uid)
         .collection("jobs")
-        .where("workerId", isEqualTo: uid)
         .get();
 
     jobs.clear();
 
     for (var doc in snapshot.docs) {
+      final data = doc.data();
+
       jobs.add(
         JobModel(
-          jobType: doc["jobType"],
-          expectedSalary: doc["expectedSalary"],
-          salaryType: doc["salaryType"],
+          jobType: data["jobType"],
+          expectedSalary: data["expectedSalary"],
+          salaryType: data["salaryType"],
         ),
       );
     }
@@ -270,226 +267,199 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   Widget build(BuildContext context) {
     final height = MediaQuery.of(context).size.height;
 
-    return ResponsiveScreen(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(height: height * 0.05),
-
-          Center(
-            child: Text(
-              profileExists
-                  ? AppLocalizations.of(context)!.editProfile
-                  : AppLocalizations.of(context)!.setupProfile,
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
-                color: Colors.white,
-              ),
-            ),
-          ),
-
-          SizedBox(height: height * 0.04),
-
-          /// PROFILE IMAGE
-          Center(
-            child: GestureDetector(
-              onTap: pickImage,
-              child: CircleAvatar(
-                radius: 55,
-                backgroundImage: profileImageFile != null
-                    ? FileImage(profileImageFile!)
-                    : (profileImageUrl.isNotEmpty
-                              ? NetworkImage(profileImageUrl)
-                              : null)
-                          as ImageProvider?,
-                backgroundColor: Colors.white24,
-                child: profileImageFile == null && profileImageUrl.isEmpty
-                    ? const Icon(
-                        Icons.camera_alt,
-                        size: 30,
-                        color: Colors.white,
-                      )
-                    : null,
-              ),
-            ),
-          ),
-
-          SizedBox(height: height * 0.04),
-
-          FullNameInputField(controller: nameController),
-          SizedBox(height: height * 0.02),
-
-          PhoneInputField(controller: phoneController),
-          SizedBox(height: height * 0.02),
-
-          PhoneInputField(controller: whatsappController),
-          SizedBox(height: height * 0.02),
-
-          Locationfield(controller: locationController),
-
-          SizedBox(height: height * 0.02),
-
-          AppCard(
-            child: ListTile(
-              leading: const Icon(Icons.my_location),
-              title: Text(
-                AppLocalizations.of(context)!.detectMyLocation,
-                style: AppTextStyles.subtitle,
-              ),
-              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-              onTap: detectLocation,
-            ),
-          ),
-
-          SizedBox(height: height * 0.04),
-
-          DropdownButtonFormField(
-            style: AppTextStyles.subtitle,
-            dropdownColor: Colors.black87,
-            hint: Text(
-              AppLocalizations.of(context)!.selectJob,
-              style: AppTextStyles.subtitle,
-            ),
-            items: jobOptions.map((job) {
-              return DropdownMenuItem(value: job, child: Text(job));
-            }).toList(),
-            onChanged: (value) {
-              setState(() {
-                selectedJob = value;
-              });
-            },
-          ),
-
-          SizedBox(height: height * 0.02),
-
-          Row(
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                flex: 2,
-                child: TextField(
-                  style: AppTextStyles.subtitle,
-                  controller: salaryController,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    prefix: Text("₹"),
-                    labelStyle: AppTextStyles.subtitle,
-                    labelText: AppLocalizations.of(context)!.expectedSalary,
+              SizedBox(height: height * 0.05),
+
+              // Header
+              Center(
+                child: Text(
+                  profileExists
+                      ? AppLocalizations.of(context)!.editProfile
+                      : AppLocalizations.of(context)!.setupProfile,
+                  style: AppTextStyles.subtitle.copyWith(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
                   ),
                 ),
               ),
 
-              const SizedBox(width: 12),
+              SizedBox(height: height * 0.04),
 
-              Expanded(
-                flex: 2,
-                child: DropdownButtonFormField<String>(
-                  dropdownColor: Colors.black87,
-                  style: AppTextStyles.subtitle,
-
-                  decoration: InputDecoration(
-                    labelText: "Type",
-                    labelStyle: AppTextStyles.subtitle,
+              // Profile image
+              Center(
+                child: GestureDetector(
+                  onTap: pickImage,
+                  child: CircleAvatar(
+                    radius: 55,
+                    backgroundImage: profileImageFile != null
+                        ? FileImage(profileImageFile!)
+                        : (profileImageUrl.isNotEmpty
+                                ? NetworkImage(profileImageUrl)
+                                : null)
+                            as ImageProvider?,
+                    backgroundColor: Colors.white24,
+                    child: profileImageFile == null && profileImageUrl.isEmpty
+                        ? const Icon(Icons.camera_alt,
+                            size: 30, color: Colors.white)
+                        : null,
                   ),
-
-                  items: [
-                    DropdownMenuItem(
-                      value: "Per Day",
-                      child: Text(AppLocalizations.of(context)!.perDay),
-                    ),
-                    DropdownMenuItem(
-                      value: "Per Hour",
-                      child: Text(AppLocalizations.of(context)!.perHour),
-                    ),
-                    DropdownMenuItem(
-                      value: "Monthly",
-                      child: Text(AppLocalizations.of(context)!.monthly),
-                    ),
-                    DropdownMenuItem(
-                      value: "Contract",
-                      child: Text(AppLocalizations.of(context)!.contract),
-                    ),
-                  ],
-
-                  onChanged: (value) {
-                    setState(() {
-                      salaryType = value!;
-                    });
-                  },
                 ),
               ),
-            ],
-          ),
 
-          SizedBox(height: height * 0.02),
+              SizedBox(height: height * 0.04),
 
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.black87),
-            onPressed: addJob,
-            child: Text(AppLocalizations.of(context)!.addJob),
-          ),
+              // Replace all text fields with PremiumTextField
+              PremiumTextField(
+                hint: AppLocalizations.of(context)!.name,
+                controller: nameController,
+              ),
+              PremiumTextField(
+                hint: "phone",
+                controller: phoneController,
+                icon: Icons.phone,
+              ),
+              PremiumTextField(
+                hint: "whatsapp",
+                controller: whatsappController,
+                icon: Icons.phone_android,
+              ),
+              PremiumTextField(
+                hint: AppLocalizations.of(context)!.location,
+                controller: locationController,
+                icon: Icons.location_on,
+              ),
 
-          SizedBox(height: height * 0.02),
+              SizedBox(height: height * 0.02),
 
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: jobs.map((job) {
-              int index = jobs.indexOf(job);
-
-              return Chip(
-                backgroundColor: Colors.black87,
-                label: Text(
-                  style: AppTextStyles.subtitle,
-                  "${job.jobType} • ₹${job.expectedSalary}/${job.salaryType}",
+              AppCard(
+                child: ListTile(
+                  leading: const Icon(Icons.my_location, color: Colors.white),
+                  title: Text(
+                    AppLocalizations.of(context)!.detectMyLocation,
+                    style: AppTextStyles.subtitle.copyWith(color: Colors.white),
+                  ),
+                  trailing:
+                      const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.white),
+                  onTap: detectLocation,
                 ),
-                deleteIcon: const Icon(Icons.close),
-                onDeleted: () {
+              ),
+
+              SizedBox(height: height * 0.04),
+
+              // Job selection
+              DropdownButtonFormField(
+                style: AppTextStyles.subtitle.copyWith(color: Colors.white),
+                dropdownColor: Colors.black87,
+                hint: Text(
+                  AppLocalizations.of(context)!.selectJob,
+                  style: AppTextStyles.subtitle.copyWith(color: Colors.white70),
+                ),
+                items: jobOptions.map((job) {
+                  return DropdownMenuItem(
+                      value: job,
+                      child: Text(job, style: const TextStyle(color: Colors.white)));
+                }).toList(),
+                onChanged: (value) {
                   setState(() {
-                    jobs.removeAt(index);
+                    selectedJob = value;
                   });
                 },
-              );
-            }).toList(),
-          ),
-
-          SizedBox(height: height * 0.03),
-
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                AppLocalizations.of(context)!.available,
-                style: AppTextStyles.subtitle,
               ),
 
-              Transform.scale(
-                scale: 0.7,
-                child: Switch(
-                  inactiveThumbColor: Colors.red,
-                  activeThumbColor: Colors.green,
-                  value: availableToday,
-                  onChanged: (value) {
-                    setState(() {
-                      availableToday = value;
-                    });
-                  },
+              SizedBox(height: height * 0.02),
+
+               PremiumTextField(
+                      hint: AppLocalizations.of(context)!.expectedSalary,
+                      controller: salaryController,
+                      icon: Icons.attach_money,
+                    ),
+                  
+                  const SizedBox(width: 12),
+                  
+                     DropdownButtonFormField<String>(
+                      dropdownColor: Colors.black54,
+                      hint: Text(
+                        "Pay type",
+                        style: AppTextStyles.subtitle.copyWith(color: Colors.white70),
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: "Per Day", child: Text("Per Day",style: TextStyle(color: Colors.white70),)),
+                        DropdownMenuItem(value: "Per Hour", child: Text("Per Hour",style: TextStyle(color: Colors.white70),)),
+                        DropdownMenuItem(value: "Monthly", child: Text("Monthly",style: TextStyle(color: Colors.white70),)),
+                        DropdownMenuItem(value: "Contract", child: Text("Contract",style: TextStyle(color: Colors.white70),)),
+                      ],
+                      onChanged: (value) {
+                        setState(() {
+                          salaryType = value!;
+                        });
+                      },
+                    ),
+                  
+                
+              
+
+              SizedBox(height: height * 0.02),
+
+              Center(
+                child: ElevatedButton(style: AppButtons.primary,
+                  onPressed: addJob,
+                  child: Text(AppLocalizations.of(context)!.addJob),
                 ),
+              ),
+
+              SizedBox(height: height * 0.02),
+
+              Wrap(
+                spacing: 8,
+                children: jobs.map((job) {
+                  return Chip(backgroundColor: Colors.yellow,
+                    label: Text(
+                      "${job.jobType} • ₹${job.expectedSalary}/${job.salaryType}",
+                      style: const TextStyle(color: Colors.black),
+                    ),
+                    onDeleted: () {
+                      setState(() {
+                        jobs.remove(job);
+                      });
+                    },
+                  );
+                }).toList(),
+              ),
+
+              SizedBox(height: height * 0.03),
+
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(AppLocalizations.of(context)!.available,
+                      style: AppTextStyles.subtitle.copyWith(color: Colors.white)),
+                  Switch(
+                    value: availableToday,
+                    onChanged: (value) {
+                      setState(() {
+                        availableToday = value;
+                      });
+                    },
+                  ),
+                ],
+              ),
+
+              ElevatedButton.icon(style: AppButtons.primary,
+                onPressed: saveProfile,
+                icon: const Icon(Icons.save),
+                label: Text(AppLocalizations.of(context)!.saveProfile),
               ),
             ],
           ),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: saveProfile,
-              icon: const Icon(Icons.save),
-              label: Text(AppLocalizations.of(context)!.saveProfile),
-              style: AppButtons.primary,
-            ),
-          ),
-
-          SizedBox(height: height * 0.02),
-        ],
+        ),
       ),
     );
   }

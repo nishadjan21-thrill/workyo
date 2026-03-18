@@ -15,16 +15,45 @@ class WorkerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final displayRating = rating; // already passed from parent
+
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: ListTile(
-        leading: CircleAvatar(
-          radius: 25,
-          backgroundImage: worker.profileImage.isNotEmpty
-              ? NetworkImage(worker.profileImage)
-              : null,
-          child: worker.profileImage.isEmpty ? const Icon(Icons.person) : null,
+        leading: Stack(
+          children: [
+            CircleAvatar(
+              radius: 25,
+              backgroundImage: worker.profileImage.isNotEmpty
+                  ? NetworkImage(worker.profileImage)
+                  : null,
+              child: worker.profileImage.isEmpty
+                  ? const Icon(Icons.person)
+                  : null,
+            ),
+
+            // 🟢 GREEN DOT (available today)
+            if (worker.availableToday)
+              Positioned(
+                bottom: 0,
+                right: 0,
+                child: Container(
+                  width: 12,
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: Colors.green,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.white,
+                      width: 2,
+                    ),
+                  ),
+                ),
+              ),
+          ],
         ),
 
         title: Text(
@@ -37,13 +66,30 @@ class WorkerCard extends StatelessWidget {
           children: [
             Text(worker.jobTypes.join(", ")),
 
+            const SizedBox(height: 6),
+
             Row(
               children: [
-                const Icon(Icons.star, size: 16, color: Colors.orange),
+                // ⭐ STAR DISPLAY (5 stars)
+                Row(
+                  children: List.generate(5, (index) {
+                    return Icon(
+                      index < displayRating.round()
+                          ? Icons.star
+                          : Icons.star_border,
+                      size: 16,
+                      color: Colors.orange,
+                    );
+                  }),
+                ),
 
-                const SizedBox(width: 4),
+                const SizedBox(width: 6),
 
-                Text(rating.toString()),
+                // ⭐ RATING NUMBER
+                Text(
+                  displayRating.toStringAsFixed(1),
+                  style: const TextStyle(fontSize: 12),
+                ),
 
                 const SizedBox(width: 12),
 

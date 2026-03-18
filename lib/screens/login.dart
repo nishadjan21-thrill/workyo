@@ -3,12 +3,9 @@ import 'package:go_router/go_router.dart';
 
 import 'package:workyo/l10n/app_localizations.dart';
 import 'package:workyo/widgets/continuebutton.dart';
-import 'package:workyo/widgets/emailfield.dart';
-import 'package:workyo/widgets/passwordfield.dart';
+import 'package:workyo/widgets/text_field.dart';
 import 'package:workyo/services/auth_service.dart';
-import 'package:workyo/widgets/responsivescreen.dart';
 
-import '../widgets/app_page.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_textstyles.dart';
 import '../theme/app_colors.dart';
@@ -48,11 +45,11 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => isLoading = false);
 
     if (user != null) {
-      context.go('/home');
+      context.go('/dashboard');
     } else {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Log in failed')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Log in failed')),
+      );
     }
   }
 
@@ -60,113 +57,136 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     final height = MediaQuery.of(context).size.height;
 
-    return AppPage(
-      child: ResponsiveScreen(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(height: height * 0.06),
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20), // ✅ spacing fix
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(height: height * 0.06),
 
-            Center(
-              child: Image.asset(
-                'assets/images/splashscreen.png',
-                height: height * 0.12,
+              Center(
+                child: Text("Yo", style: AppTextStyles.header),
               ),
-            ),
 
-            AppSpacing.section,
+              AppSpacing.section,
 
-            Center(
-              child: Text(
-                AppLocalizations.of(context)!.logIn,
-                style: AppTextStyles.header,
+              Center(
+                child: Text(
+                  AppLocalizations.of(context)!.logIn,
+                  style: AppTextStyles.title,
+                ),
               ),
-            ),
 
-            AppSpacing.section,
+              AppSpacing.section,
 
-            EmailInputField(controller: emailController),
-
-            AppSpacing.small,
-
-            PasswordInputField(controller: passwordController),
-
-            AppSpacing.small,
-
-            TextButton(
-              onPressed: () {
-                _showResetDialog(context);
-              },
-              child: const Text(
-                "Forgot password?",
-                style: TextStyle(color: AppColors.textSecondary),
+              // ✅ Premium Email Field
+              PremiumTextField(
+                hint: "Enter your email",
+                controller: emailController,
+                icon: Icons.email,
               ),
-            ),
 
-            AppSpacing.small,
+              AppSpacing.small,
 
-            TextButton(
-              onPressed: () {
-                context.go('/signup');
-              },
-              child: Text(
-                AppLocalizations.of(context)!.createAccount,
-                style: TextStyle(color: AppColors.primary),
+              // ✅ Premium Password Field
+              PremiumTextField(
+                hint: "Enter your password",
+                controller: passwordController,
+                icon: Icons.lock,
+                obscureText: true,
               ),
-            ),
-            const Spacer(),
 
-            ContinueButton(
-              text: isLoading
-                  ? "Please wait..."
-                  : AppLocalizations.of(context)!.logIn,
-              onPressed: isLoading
-                  ? null
-                  : () async {
-                      await _handleLogin();
-                    },
-            ),
+              AppSpacing.small,
 
-            SizedBox(height: height * 0.02),
-          ],
+              TextButton(
+                onPressed: () {
+                  _showResetDialog();
+                },
+                child: const Text(
+                  "Forgot password?",
+                  style: TextStyle(color: AppColors.clr1),
+                ),
+              ),
+
+              AppSpacing.small,
+
+              TextButton(
+                onPressed: () {
+                  context.go('/signup');
+                },
+                child: Text(
+                  AppLocalizations.of(context)!.createAccount,
+                  style: TextStyle(color: AppColors.clr1),
+                ),
+              ),
+
+              ContinueButton(
+                text: isLoading
+                    ? "Please wait..."
+                    : AppLocalizations.of(context)!.logIn,
+                onPressed: isLoading
+                    ? null
+                    : () async {
+                        await _handleLogin();
+                      },
+              ),
+
+              SizedBox(height: height * 0.02),
+            ],
+          ),
         ),
       ),
     );
   }
-}
 
-void _showResetDialog(BuildContext context) {
-  final emailController = TextEditingController();
-  final authService = AuthService();
+  void _showResetDialog() {
+    final emailController = TextEditingController();
+    final authService = AuthService();
 
-  showDialog(
-    context: context,
-    builder: (context) {
-      return AlertDialog(
-        title: const Text("Reset Password"),
-        content: TextField(
-          controller: emailController,
-          decoration: const InputDecoration(labelText: "Enter your email"),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: Colors.black, // 🔥 match theme
+          title: const Text(
+            "Reset Password",
+            style: TextStyle(color: Colors.white),
           ),
-          TextButton(
-            onPressed: () async {
-              await authService.resetPassword(emailController.text.trim());
-
-              Navigator.pop(context);
-
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("Password reset email sent")),
-              );
-            },
-            child: const Text("Send"),
+          content: PremiumTextField(
+            hint: "Enter your email",
+            controller: emailController,
+            icon: Icons.email,
           ),
-        ],
-      );
-    },
-  );
+          actions: [
+            TextButton(
+              onPressed: () {
+                if (mounted) Navigator.pop(context);
+              },
+              child: const Text("Cancel", style: TextStyle(color: Colors.white70)),
+            ),
+            TextButton(
+              onPressed: () async {
+                await authService.resetPassword(emailController.text.trim());
+
+                if (mounted) {
+                  Navigator.pop(context); // Close dialog
+
+                  ScaffoldMessenger.of(this.context).showSnackBar(
+                    const SnackBar(content: Text("Password reset email sent")),
+                  );
+                }
+              },
+              child: const Text(
+                "Send",
+                style: TextStyle(color: AppColors.clr1),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
 }

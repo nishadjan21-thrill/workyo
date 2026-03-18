@@ -39,5 +39,25 @@ class WorkerModel {
       "rating": 0,
       "createdAt": DateTime.now()
     };
+    
   }
+  factory WorkerModel.fromMap(Map<String, dynamic> data) {
+  return WorkerModel(
+    name: data["name"] ?? "",
+    phone: data["phone"] ?? "",
+    whatsapp: data["whatsapp"] ?? "",
+    locationName: data["locationName"] ?? "",
+    profileImage: data["profileImage"] ?? "",
+
+    // ✅ FIXED BOOLEAN
+    availableToday: (data["availableToday"] ?? false) == true,
+
+    // ✅ SAFE DOUBLE CONVERSION
+    latitude: (data["latitude"] ?? 0).toDouble(),
+    longitude: (data["longitude"] ?? 0).toDouble(),
+
+    // ✅ SAFE LIST
+    jobTypes: List<String>.from(data["jobTypes"] ?? []),
+  );
+}
 }

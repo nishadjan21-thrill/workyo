@@ -11,11 +11,15 @@ class AppTextStyles {
   static const title = TextStyle(
     fontSize: 16,
     fontWeight: FontWeight.bold,
-    color: AppColors.textPrimary,
+    color: Colors.white,
   );
 
   static const subtitle = TextStyle(
     fontSize: 14,
-    color: AppColors.textSecondary,
+    color: AppColors.clr2,
+  );
+  static const yosty1 = TextStyle(fontFamily: 'ChelseaMarket',
+    fontSize: 69,fontWeight: FontWeight.normal,
+    color: AppColors.clr1,
   );
 }

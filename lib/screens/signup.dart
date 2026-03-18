@@ -3,14 +3,9 @@ import 'package:go_router/go_router.dart';
 import 'package:workyo/l10n/app_localizations.dart';
 
 import 'package:workyo/widgets/continuebutton.dart';
-import 'package:workyo/widgets/emailfield.dart';
-import 'package:workyo/widgets/fullnamefield.dart';
-import 'package:workyo/widgets/passwordfield.dart';
-import 'package:workyo/widgets/phonefield.dart';
-import 'package:workyo/widgets/responsivescreen.dart';
-import 'package:workyo/services/auth_service.dart';
+import 'package:workyo/widgets/text_field.dart'; // For PremiumTextField
 
-import '../widgets/app_page.dart';
+import 'package:workyo/services/auth_service.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_textstyles.dart';
 import '../theme/app_colors.dart';
@@ -56,84 +51,106 @@ class _SignUpScreenState extends State<SignUpScreen> {
     if (!mounted) return;
 
     if (user != null) {
-      context.go('/home');
+      context.go('/workerlist');
     } else {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Sign up failed')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Sign up failed')),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final height = MediaQuery.of(context).size.height;
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: 
+         LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: IntrinsicHeight(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      SizedBox(height: constraints.maxHeight * 0.06),
 
-    return AppPage(
-      child: ResponsiveScreen(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(height: height * 0.06),
+                      Center(
+                        child: Text("Yo", style: AppTextStyles.subtitle),
+                      ),
 
-            Center(
-              child: Image.asset(
-                'assets/images/splashscreen.png',
-                height: height * 0.12,
+                      AppSpacing.section,
+
+                      Center(
+                        child: Text(
+                          AppLocalizations.of(context)!.createAccount,
+                          style: AppTextStyles.header,
+                        ),
+                      ),
+
+                      AppSpacing.section,
+
+                      // Full Name
+                      PremiumTextField(
+                        controller: fullnameController,hint: AppLocalizations.of(context)!.name,
+                        
+                        
+                      ),
+                      AppSpacing.small,
+
+                      // Phone
+                      PremiumTextField(
+                        controller: phoneController,
+                        hint: "phone",
+                        
+                      ),
+                      AppSpacing.small,
+
+                      // Email
+                      PremiumTextField(
+                        controller: emailController,
+                        hint: AppLocalizations.of(context)!.email,
+                        
+                      ),
+                      AppSpacing.small,
+
+                      // Password
+                      PremiumTextField(
+                        controller: passwordController,
+                        hint: AppLocalizations.of(context)!.password,
+                        obscureText: true,
+                      ),
+                      AppSpacing.small,
+
+                      // Already have account
+                      TextButton(
+                        onPressed: () => context.go('/login'),
+                        child: Text(
+                          AppLocalizations.of(context)!.alreadyHaveAccount,
+                          style: const TextStyle(color: AppColors.primary),
+                        ),
+                      ),
+
+                      const Spacer(),
+
+                      // Continue button pinned at bottom
+                      ContinueButton(
+                        text: isLoading
+                            ? "Please wait..."
+                            : AppLocalizations.of(context)!.createAccount,
+                        onPressed: isLoading ? null : _handleSignUp,
+                      ),
+
+                      SizedBox(height: constraints.maxHeight * 0.02),
+                    ],
+                  ),
+                ),
               ),
-            ),
-
-            AppSpacing.section,
-
-            Center(
-              child: Text(
-                AppLocalizations.of(context)!.createAccount,
-                style: AppTextStyles.header,
-              ),
-            ),
-
-            AppSpacing.section,
-
-            FullNameInputField(controller: fullnameController),
-
-            AppSpacing.small,
-
-            PhoneInputField(controller: phoneController),
-
-            AppSpacing.small,
-
-            EmailInputField(controller: emailController),
-
-            AppSpacing.small,
-
-            PasswordInputField(controller: passwordController),
-
-            AppSpacing.small,
-
-            TextButton(
-              onPressed: () => context.go('/login'),
-              child: Text(
-                AppLocalizations.of(context)!.alreadyHaveAccount,
-                style: const TextStyle(color: AppColors.primary),
-              ),
-            ),
-
-            const Spacer(),
-
-            ContinueButton(
-              text: isLoading
-                  ? "Please wait..."
-                  : AppLocalizations.of(context)!.createAccount,
-              onPressed: isLoading
-                  ? null
-                  : () async {
-                      await _handleSignUp();
-                    },
-            ),
-
-            SizedBox(height: height * 0.02),
-          ],
+            );
+          },
         ),
-      ),
+      
     );
   }
 }

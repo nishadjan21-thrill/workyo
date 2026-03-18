@@ -8,21 +8,14 @@ class ResponsiveScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return Scaffold(appBar: AppBar(title: const Text('Workyo', style: TextStyle(fontWeight: FontWeight.bold,color: Colors.white))),
       resizeToAvoidBottomInset: true,
 
       body: Container(
         decoration: BoxDecoration(gradient: AppGradients.mainBackground),
 
         child: SafeArea(
-          child: SingleChildScrollView(
-            padding: EdgeInsets.only(
-              left: 16,
-              right: 16,
-              bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-            ),
-            child: child,
-          ),
+          child: child,
         ),
       ),
     );

@@ -5,13 +5,12 @@ import 'package:go_router/go_router.dart';
 import 'package:workyo/providers/languageprovider.dart';
 import 'package:workyo/widgets/continuebutton.dart';
 import 'package:workyo/widgets/languagebutton.dart';
-import 'package:workyo/widgets/responsivescreen.dart';
+
 
 import '../l10n/app_localizations.dart';
-import '../widgets/app_page.dart';
+
 import '../theme/app_spacing.dart';
 import '../theme/app_textstyles.dart';
-import '../theme/app_colors.dart';
 
 class LanguageSelect extends StatelessWidget {
   const LanguageSelect({super.key});
@@ -28,18 +27,15 @@ class LanguageSelect extends StatelessWidget {
       builder: (context, languageProvider, _) {
         final height = MediaQuery.of(context).size.height;
 
-        return AppPage(
-          child: ResponsiveScreen(
+        return Scaffold(backgroundColor: Colors.transparent,
+          body: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
 
                 SizedBox(height: height * 0.08),
 
-                Image.asset(
-                  'assets/images/splashscreen.png',
-                  height: height * 0.12,
-                ),
+                Text("Yo", style: AppTextStyles.yosty1),
 
                 AppSpacing.section,
 
@@ -69,7 +65,7 @@ class LanguageSelect extends StatelessWidget {
                   );
                 }),
 
-                const Spacer(),
+                
 
                 ContinueButton(
                   text: AppLocalizations.of(context)!.continueText,

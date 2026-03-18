@@ -5,6 +5,7 @@ import 'package:workyo/l10n/app_localizations.dart';
 import 'package:workyo/providers/languageprovider.dart';
 import 'package:workyo/router/app_router.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:workyo/widgets/backround_wrapper.dart';
 import 'firebase_options.dart';
 
 void main() async {
@@ -28,27 +29,39 @@ class Workyo extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<LanguageProvider>(
       builder: (context, languageProvider, _) {
-        return MaterialApp.router(
-          routerConfig: appRouter,
-          
-          locale: languageProvider.locale,
-          supportedLocales: const [Locale('en'), Locale('ml'), Locale('hi')],
+        return  MaterialApp.router(
+  routerConfig: appRouter,
 
-          localizationsDelegates: [
-            AppLocalizations.delegate,
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-          ],
+  builder: (context, child) {
+    return AppBackgroundWrapper(child: child!);
+  },
 
-          title: 'Workyo',
+  locale: languageProvider.locale,
+  supportedLocales: const [
+    Locale('en'),
+    Locale('ml'),
+    Locale('hi')
+  ],
 
-          theme: ThemeData(
-            primaryColor: const Color(0xFF1E6CFF),
-            fontFamily: 'Roboto',
-          ),
-        );
+  localizationsDelegates: [
+    AppLocalizations.delegate,
+    GlobalMaterialLocalizations.delegate,
+    GlobalWidgetsLocalizations.delegate,
+    GlobalCupertinoLocalizations.delegate,
+  ],
+
+  title: 'Workyo',
+
+  theme: ThemeData(
+    primaryColor: Colors.yellowAccent,
+    fontFamily: 'ChelseaMarket',
+
+    scaffoldBackgroundColor: Colors.transparent, // ✅ IMPORTANT
+  ),
+);
       },
     );
   }
 }
+
+

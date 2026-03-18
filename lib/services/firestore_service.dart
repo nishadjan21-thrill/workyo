@@ -56,4 +56,32 @@ class FirestoreService {
       });
     }
   }
+
+  /// Update worker rating
+  Future<void> updateWorkerRating(String workerId, double newRating) async {
+    final workerRef = _db.collection("workers").doc(workerId);
+
+    // Get current rating data
+    final workerDoc = await workerRef.get();
+    final currentData = workerDoc.data();
+
+    final currentRating = (currentData?["rating"] ?? 0).toDouble();
+    final currentReviewCount = (currentData?["reviewCount"] ?? 0).toInt();
+
+    // Calculate new average rating
+    final totalRatingSum = currentRating * currentReviewCount + newRating;
+    final newReviewCount = currentReviewCount + 1;
+    final averageRating = totalRatingSum / newReviewCount;
+
+    // Update the worker document
+    await workerRef.update({
+      "rating": averageRating,
+      "reviewCount": newReviewCount,
+    });
+  }
+
+  /// Get worker stream for real-time updates
+  Stream<DocumentSnapshot> getWorkerStream(String workerId) {
+    return _db.collection("workers").doc(workerId).snapshots();
+  }
 }

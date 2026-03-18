@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import '../widgets/app_card.dart';
+
+import '../theme/app_textstyles.dart';
 
 class LanguageOptionTile extends StatelessWidget {
   final String title;
@@ -16,40 +19,51 @@ class LanguageOptionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: isSelected ? const Color(0xFF1E6CFF) : Colors.grey.shade300,
-            width: 1.5,
-          ),
-          color: isSelected ? const Color(0xFFEAF1FF) : Colors.white,
-        ),
+    return AppCard(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
         child: Row(
           children: [
+            // 🌐 Text section
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
-                    fontSize: 16,
+                  style: AppTextStyles.subtitle.copyWith(
+                    color: Colors.white,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text(subtitle, style: const TextStyle(color: Colors.grey)),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.6),
+                  ),
+                ),
               ],
             ),
+
             const Spacer(),
-            if (isSelected)
-              const Icon(Icons.check_circle, color: Color(0xFF1E6CFF))
-            else
-              const Icon(Icons.radio_button_unchecked, color: Colors.grey),
+
+            // ✅ Selection UI
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isSelected
+                    ? const Color(0xFF1E6CFF)
+                    : Colors.white.withValues(alpha: 0.1),
+              ),
+              child: Icon(
+                isSelected ? Icons.check : Icons.circle_outlined,
+                color: isSelected ? Colors.white : Colors.white54,
+                size: 18,
+              ),
+            ),
           ],
         ),
       ),

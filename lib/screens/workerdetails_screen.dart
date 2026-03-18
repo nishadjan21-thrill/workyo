@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:workyo/widgets/app_page.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:async';
+
 import '../../theme/app_textstyles.dart';
 import '../../widgets/app_card.dart';
 
-class WorkerDetailsScreen extends StatelessWidget {
+class WorkerDetailsScreen extends StatefulWidget {
   final Map<String, dynamic> worker;
   final List<Map<String, dynamic>> jobs;
   final double? userLat;
@@ -18,12 +20,101 @@ class WorkerDetailsScreen extends StatelessWidget {
     this.userLng,
   });
 
+  @override
+  State<WorkerDetailsScreen> createState() => _WorkerDetailsScreenState();
+}
+
+class _WorkerDetailsScreenState extends State<WorkerDetailsScreen> {
+  int selectedRating = 0;
+
+  StreamSubscription<DocumentSnapshot>? _workerSubscription;
+  Map<String, dynamic> _liveWorkerData = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _liveWorkerData = Map.from(widget.worker);
+    _startListeningToWorkerUpdates();
+  }
+
+  @override
+  void dispose() {
+    _workerSubscription?.cancel();
+    super.dispose();
+  }
+
+  void _startListeningToWorkerUpdates() {
+    final workerId = widget.worker["uid"];
+    if (workerId != null) {
+      _workerSubscription = FirebaseFirestore.instance
+          .collection('workers')
+          .doc(workerId)
+          .snapshots()
+          .listen((snapshot) {
+        if (snapshot.exists && mounted) {
+          setState(() {
+            _liveWorkerData =
+                snapshot.data() ??
+                    _liveWorkerData;
+          });
+        }
+      });
+    }
+  }
+
+  // ✅ FIXED RATING SYSTEM
+  Future<void> _submitRating(int rating) async {
+    if (rating == 0) return;
+
+    try {
+      final workerId = widget.worker["uid"];
+      if (workerId == null) return;
+
+      final docRef =
+          FirebaseFirestore.instance.collection('workers').doc(workerId);
+
+      await FirebaseFirestore.instance.runTransaction((transaction) async {
+        final snapshot = await transaction.get(docRef);
+
+        if (!snapshot.exists) return;
+
+        final data = snapshot.data()!;
+        final currentRating = (data["rating"] ?? 0).toDouble();
+        final ratingCount = (data["ratingCount"] ?? 0);
+
+        final newRating =
+            ((currentRating * ratingCount) + rating) /
+                (ratingCount + 1);
+
+        transaction.update(docRef, {
+          "rating": newRating,
+          "ratingCount": ratingCount + 1,
+        });
+      });
+
+      setState(() {
+        selectedRating = 0; // reset
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Rating submitted successfully!')),
+      );
+    } catch (e) {
+      print('Error submitting rating: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to submit rating')),
+      );
+    }
+  }
+
   double calculateDistance() {
-    if (userLat == null || userLng == null) return 0.0;
-    final lat = worker["latitude"];
-    final lng = worker["longitude"];
+    if (widget.userLat == null || widget.userLng == null) return 0.0;
+    final lat = _liveWorkerData["latitude"];
+    final lng = _liveWorkerData["longitude"];
     if (lat != null && lng != null) {
-      return Geolocator.distanceBetween(userLat!, userLng!, lat, lng) / 1000;
+      return Geolocator.distanceBetween(
+              widget.userLat!, widget.userLng!, lat, lng) /
+          1000;
     }
     return 0.0;
   }
@@ -31,9 +122,11 @@ class WorkerDetailsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final distance = calculateDistance();
+    final rating = (_liveWorkerData["rating"] ?? 0).toDouble();
 
-    return AppPage(
-      child: SizedBox.expand(
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: SizedBox.expand(
         child: Column(
           children: [
             Expanded(
@@ -41,33 +134,36 @@ class WorkerDetailsScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
-                    // Profile card
+                    // Profile
                     AppCard(
                       child: Column(
                         children: [
                           CircleAvatar(
                             radius: 50,
-                            backgroundImage: worker["profileImage"] != null
-                                ? NetworkImage(worker["profileImage"])
-                                : null,
-                            child: worker["profileImage"] == null
-                                ? const Icon(Icons.person, size: 40)
-                                : null,
+                            backgroundImage:
+                                _liveWorkerData["profileImage"] != null
+                                    ? NetworkImage(
+                                        _liveWorkerData["profileImage"])
+                                    : null,
+                            child:
+                                _liveWorkerData["profileImage"] == null
+                                    ? const Icon(Icons.person, size: 40)
+                                    : null,
                           ),
                           const SizedBox(height: 12),
                           Text(
-                            worker["name"] ?? "",
+                            _liveWorkerData["name"] ?? "",
                             style: AppTextStyles.title,
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            worker["locationName"] ?? "",
-                            style: AppTextStyles.subtitle,
+                            _liveWorkerData["locationName"] ?? "",
+                            style: AppTextStyles.title,
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            "${distance.toStringAsFixed(1)} km away • ⭐ ${worker["rating"] ?? 0}",
-                            style: AppTextStyles.subtitle,
+                            "${distance.toStringAsFixed(1)} km away • ⭐ ${rating.toStringAsFixed(1)}",
+                            style: AppTextStyles.title,
                           ),
                         ],
                       ),
@@ -75,33 +171,35 @@ class WorkerDetailsScreen extends StatelessWidget {
 
                     const SizedBox(height: 16),
 
-                    // Jobs list
+                    // Jobs
                     AppCard(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text("Jobs Offered", style: AppTextStyles.title),
+                          Text("Jobs Offered",
+                              style: AppTextStyles.title),
                           const SizedBox(height: 8),
                           Wrap(
                             spacing: 8,
                             runSpacing: 6,
-                            children: jobs.map((job) {
-                              final salaryType = job['salaryType'] ?? '';
+                            children: widget.jobs.map((job) {
+                              final salaryType =
+                                  job['salaryType'] ?? '';
                               return Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 6,
-                                ),
+                                padding:
+                                    const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 6),
                                 decoration: BoxDecoration(
                                   color: Colors.grey[800],
-                                  borderRadius: BorderRadius.circular(8),
+                                  borderRadius:
+                                      BorderRadius.circular(8),
                                 ),
                                 child: Text(
                                   "${job['jobType']} • ₹${job['expectedSalary'] ?? 'N/A'} / $salaryType",
                                   style: const TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 13,
-                                  ),
+                                      color: Colors.white70,
+                                      fontSize: 13),
                                 ),
                               );
                             }).toList(),
@@ -112,53 +210,58 @@ class WorkerDetailsScreen extends StatelessWidget {
 
                     const SizedBox(height: 16),
 
-                    // Contact buttons
+                    // Rating
                     AppCard(
                       child: Column(
                         children: [
-                          ElevatedButton.icon(
-                            onPressed: () {
-                              final phone = worker["phone"] ?? "";
-                              if (phone.isNotEmpty) {
-                                // launchUrl(Uri.parse("tel:$phone"));
-                              }
-                            },
-                            icon: const Icon(Icons.call),
-                            label: const Text("Call Worker"),
-                          ),
+                          Text("Rate this worker",
+                              style: AppTextStyles.title),
                           const SizedBox(height: 8),
-                          ElevatedButton.icon(
-                            onPressed: () {
-                              final phone = worker["phone"] ?? "";
-                              if (phone.isNotEmpty) {
-                                // launchUrl(Uri.parse("sms:$phone"));
-                              }
-                            },
-                            icon: const Icon(Icons.message),
-                            label: const Text("Send Message"),
+
+                          // ⭐ Current rating display
+                          
+                          
+                          const Text("Rate Worker",
+                              style: TextStyle(
+                                  color: Colors.yellowAccent)),
+
+                          const SizedBox(height: 8),
+
+                          // ⭐ User selection
+                          Row(
+                            mainAxisAlignment:
+                                MainAxisAlignment.center,
+                            children: List.generate(5, (index) {
+                              final star = index + 1;
+                              return IconButton(
+                                iconSize: 30,
+                                icon: Icon(
+                                  star <= selectedRating
+                                      ? Icons.star
+                                      : Icons.star_border,
+                                  color: Colors.yellow,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    selectedRating = star;
+                                  });
+                                },
+                              );
+                            }),
                           ),
+
+                          if (selectedRating > 0) ...[
+                            Text("You selected: $selectedRating stars"),
+                            const SizedBox(height: 12),
+                            ElevatedButton(
+                              onPressed: () =>
+                                  _submitRating(selectedRating),
+                              child: const Text("Submit Rating"),
+                            ),
+                          ],
                         ],
                       ),
                     ),
-
-                    const SizedBox(height: 16),
-
-                    // Reviews (optional)
-                    if (worker["reviewCount"] != null &&
-                        worker["reviewCount"] > 0)
-                      AppCard(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text("Reviews", style: AppTextStyles.title),
-                            const SizedBox(height: 8),
-                            Text(
-                              "${worker['reviewCount']} reviews • ⭐ ${worker['rating'] ?? 0}",
-                              style: AppTextStyles.subtitle,
-                            ),
-                          ],
-                        ),
-                      ),
                   ],
                 ),
               ),

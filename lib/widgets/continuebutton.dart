@@ -24,7 +24,7 @@ class ContinueButton extends StatelessWidget {
             : () async {
                 await onPressed!();
               },
-        child: Text(text, style: TextStyle(color: AppColors.textPrimary)),
+        child: Text(text, style: TextStyle(color: AppColors.primary)),
       ),
     );
   }

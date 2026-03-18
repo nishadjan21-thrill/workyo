@@ -31,8 +31,8 @@ class AuthService {
       }
 
       return user;
-    } on FirebaseAuthException catch (e) {
-      print(e.message);
+    } on FirebaseAuthException {
+      
       return null;
     }
   }
@@ -47,8 +47,8 @@ class AuthService {
       final user = credential.user;
 
       return user;
-    } on FirebaseAuthException catch (e) {
-      print(e.message);
+    } on FirebaseAuthException {
+      
       return null;
     }
   }
