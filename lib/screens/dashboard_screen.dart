@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:geolocator/geolocator.dart';
@@ -25,6 +26,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final user = FirebaseAuth.instance.currentUser;
 
     if (user == null) {
@@ -67,29 +69,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   AppCard(
                     child: Column(
                       children: [
-                        const Icon(Icons.person, size: 60, color: Colors.white),
-                        const SizedBox(height: 8),
+                        Icon(Icons.person, size: 60.sp, color: Colors.white),
+                        SizedBox(height: 8.h),
                         Text(
                           user.email ?? "User",
-                          style: AppTextStyles.subtitle.copyWith(color: Colors.white),
+                          style: AppTextStyles.subtitle.copyWith(
+                            color: Colors.white,
+                            fontSize: 14.sp,
+                          ),
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: 16.h),
                         ElevatedButton(
                           onPressed: () => context.go('/profile'),
-                          child: const Text("Register as Worker"),
+                          child: Text(l10n.registerasaworker),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16.h),
                   ElevatedButton.icon(
                     onPressed: () async {
                       await FirebaseAuth.instance.signOut();
                       if (!mounted) return;
                       context.go('/login');
                     },
-                    icon: const Icon(Icons.logout),
-                    label: const Text("Logout"),
+                    icon: Icon(Icons.logout, size: 20.sp),
+                    label: Text(l10n.logout),
                   ),
                 ],
               ),
@@ -102,15 +107,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
         final profileImage = data["profileImage"] ?? "";
         availableToday = data["availableToday"] ?? false;
 
-        // ✅ FIXED HERE
         final rating = (data["rating"] ?? 0).toDouble();
         final ratingCount = data["ratingCount"] ?? 0;
 
         return StreamBuilder<QuerySnapshot>(
           stream: FirebaseFirestore.instance
-              .collection("workers")
-              .doc(uid)
               .collection("jobs")
+              .where("workerId", isEqualTo: uid)
               .snapshots(),
           builder: (context, jobSnapshot) {
             final jobs = jobSnapshot.hasData ? jobSnapshot.data!.docs : [];
@@ -132,63 +135,55 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
             Future<void> updateLocation() async {
               final pos = await Geolocator.getCurrentPosition(
-                  desiredAccuracy: LocationAccuracy.high);
+                desiredAccuracy: LocationAccuracy.high,
+              );
               await FirebaseFirestore.instance
                   .collection("workers")
                   .doc(uid)
                   .update({
-                "latitude": pos.latitude,
-                "longitude": pos.longitude,
-              });
+                    "latitude": pos.latitude,
+                    "longitude": pos.longitude,
+                  });
               if (!mounted) return;
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                      AppLocalizations.of(context)!.locationUpdated),
-                ),
-              );
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text(l10n.locationUpdated)));
             }
 
             void showLanguagePicker() {
               showModalBottomSheet(
                 context: context,
                 backgroundColor: Colors.white,
-                shape: const RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius.vertical(top: Radius.circular(20))),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.vertical(
+                    top: Radius.circular(20.r),
+                  ),
+                ),
                 builder: (context) {
                   Widget languageOption(String title, Locale locale) {
                     return ListTile(
-                      leading: const Icon(Icons.language),
-                      title: Text(title),
+                      leading: Icon(Icons.language, size: 20.sp),
+                      title: Text(title, style: TextStyle(fontSize: 14.sp)),
                       onTap: () {
-                        context
-                            .read<LanguageProvider>()
-                            .setLocale(locale);
+                        context.read<LanguageProvider>().setLocale(locale);
                         if (mounted) Navigator.pop(context);
                       },
                     );
                   }
 
                   return Padding(
-                    padding: const EdgeInsets.all(20),
+                    padding: EdgeInsets.all(20.w),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          AppLocalizations.of(context)!.selectLanguage,
-                          style: AppTextStyles.title,
+                          l10n.selectLanguage,
+                          style: AppTextStyles.title.copyWith(fontSize: 16.sp),
                         ),
-                        const SizedBox(height: 16),
-                        languageOption(
-                            AppLocalizations.of(context)!.english,
-                            const Locale('en')),
-                        languageOption(
-                            AppLocalizations.of(context)!.malayalam,
-                            const Locale('ml')),
-                        languageOption(
-                            AppLocalizations.of(context)!.hindi,
-                            const Locale('hi')),
+                        SizedBox(height: 16.h),
+                        languageOption(l10n.english, const Locale('en')),
+                        languageOption(l10n.malayalam, const Locale('ml')),
+                        languageOption(l10n.hindi, const Locale('hi')),
                       ],
                     ),
                   );
@@ -199,37 +194,48 @@ class _DashboardScreenState extends State<DashboardScreen> {
             return Scaffold(
               backgroundColor: Colors.transparent,
               body: ListView(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.all(16.w),
                 children: [
-                  // Profile card
                   AppCard(
                     child: Center(
                       child: Column(
                         children: [
                           CircleAvatar(
-                            radius: 43,
+                            radius: 43.r,
                             backgroundImage: profileImage.isNotEmpty
                                 ? NetworkImage(profileImage)
                                 : null,
                             child: profileImage.isEmpty
-                                ? const Icon(Icons.person,
-                                    size: 30, color: Colors.white)
+                                ? Icon(
+                                    Icons.person,
+                                    size: 30.sp,
+                                    color: Colors.white,
+                                  )
                                 : null,
                           ),
-                          const SizedBox(height: 8),
-                          Text(name,
-                              style: AppTextStyles.subtitle
-                                  .copyWith(color: Colors.white)),
+                          SizedBox(height: 8.h),
+                          Text(
+                            name,
+                            style: AppTextStyles.subtitle.copyWith(
+                              color: Colors.white,
+                              fontSize: 14.sp,
+                            ),
+                          ),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Icon(Icons.star,
-                                  color: Colors.amber, size: 18),
-                              const SizedBox(width: 4),
+                              Icon(
+                                Icons.star,
+                                color: Colors.amber,
+                                size: 18.sp,
+                              ),
+                              SizedBox(width: 4.w),
                               Text(
                                 "${rating.toStringAsFixed(1)} ($ratingCount reviews)",
-                                style: AppTextStyles.subtitle
-                                    .copyWith(color: Colors.white70),
+                                style: AppTextStyles.subtitle.copyWith(
+                                  color: Colors.white70,
+                                  fontSize: 12.sp,
+                                ),
                               ),
                             ],
                           ),
@@ -238,23 +244,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                   ),
 
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12.h),
 
-                  // Availability card
                   AppCard(
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          AppLocalizations.of(context)!.available,
-                          style: AppTextStyles.subtitle
-                              .copyWith(color: Colors.white),
+                          l10n.available,
+                          style: AppTextStyles.subtitle.copyWith(
+                            color: Colors.white,
+                            fontSize: 14.sp,
+                          ),
                         ),
                         Transform.scale(
-                          scale: 0.7,
+                          scale: 0.8,
                           child: Switch(
-                            inactiveThumbColor: Colors.red,
-                            activeThumbColor: Colors.green,
                             value: availableToday,
                             onChanged: toggleAvailability,
                           ),
@@ -263,86 +268,107 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                   ),
 
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12.h),
 
-                  // Jobs list
-                  Text("My Jobs (${jobs.length})",
-                      style: AppTextStyles.subtitle
-                          .copyWith(color: Colors.white)),
-                  const SizedBox(height: 8),
+                  Text(
+                    "${l10n.myJobs} (${jobs.length})",
+                    style: AppTextStyles.subtitle.copyWith(
+                      color: Colors.white,
+                      fontSize: 14.sp,
+                    ),
+                  ),
+                  SizedBox(height: 8.h),
 
                   ...jobs.map((jobDoc) {
-                    final job =
-                        jobDoc.data() as Map<String, dynamic>;
+                    final job = jobDoc.data() as Map<String, dynamic>;
 
                     return AppCard(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(job["jobType"] ?? 'Unknown',
-                              style: AppTextStyles.subtitle
-                                  .copyWith(color: Colors.white)),
-                          const SizedBox(height: 4),
+                          Text(
+                            job["jobType"] ?? 'Unknown',
+                            style: AppTextStyles.subtitle.copyWith(
+                              color: Colors.white,
+                              fontSize: 14.sp,
+                            ),
+                          ),
+                          SizedBox(height: 4.h),
                           Text(
                             "₹${job["expectedSalary"] ?? 0} / ${job["salaryType"] ?? 'N/A'}",
-                            style: AppTextStyles.subtitle
-                                .copyWith(color: Colors.white70),
+                            style: AppTextStyles.subtitle.copyWith(
+                              color: Colors.white70,
+                              fontSize: 12.sp,
+                            ),
                           ),
                         ],
                       ),
                     );
                   }),
 
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12.h),
 
-                  // Update location
                   AppCard(
                     child: ListTile(
-                      leading: const Icon(Icons.my_location,
-                          color: Colors.white),
-                      title: Text(
-                        AppLocalizations.of(context)!.updateLocation,
-                        style: AppTextStyles.subtitle
-                            .copyWith(color: Colors.white),
+                      leading: Icon(
+                        Icons.my_location,
+                        size: 20.sp,
+                        color: Colors.white,
                       ),
-                      trailing:
-                          const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.white),
+                      title: Text(
+                        l10n.updateLocation,
+                        style: AppTextStyles.subtitle.copyWith(
+                          color: Colors.white,
+                          fontSize: 14.sp,
+                        ),
+                      ),
+                      trailing: Icon(
+                        Icons.arrow_forward_ios,
+                        size: 16.sp,
+                        color: Colors.white,
+                      ),
                       onTap: updateLocation,
                     ),
                   ),
 
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12.h),
 
-                  // Change language
                   AppCard(
                     child: ListTile(
-                      leading: const Icon(Icons.language,
-                          color: Colors.white),
-                      title: Text(
-                        AppLocalizations.of(context)!.changeLanguage,
-                        style: AppTextStyles.subtitle
-                            .copyWith(color: Colors.white),
+                      leading: Icon(
+                        Icons.language,
+                        size: 20.sp,
+                        color: Colors.white,
                       ),
-                      trailing:
-                          const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.white),
+                      title: Text(
+                        l10n.changeLanguage,
+                        style: AppTextStyles.subtitle.copyWith(
+                          color: Colors.white,
+                          fontSize: 14.sp,
+                        ),
+                      ),
+                      trailing: Icon(
+                        Icons.arrow_forward_ios,
+                        size: 16.sp,
+                        color: Colors.white,
+                      ),
                       onTap: showLanguagePicker,
                     ),
                   ),
 
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16.h),
 
-                  // Logout button
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
                       onPressed: logout,
-                      icon: const Icon(Icons.logout),
-                      label: Text(AppLocalizations.of(context)!.logout),
+                      icon: Icon(Icons.logout, size: 20.sp),
+                      label: Text(l10n.logout),
                       style: AppButtons.primary,
                     ),
                   ),
 
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16.h),
                 ],
               ),
             );

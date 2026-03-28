@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 
@@ -6,13 +7,13 @@ import 'package:workyo/providers/languageprovider.dart';
 import 'package:workyo/widgets/continuebutton.dart';
 import 'package:workyo/widgets/languagebutton.dart';
 
-
 import '../l10n/app_localizations.dart';
 
-import '../theme/app_spacing.dart';
 import '../theme/app_textstyles.dart';
 
 class LanguageSelect extends StatelessWidget {
+  static Widget section = SizedBox(height: 24.h);
+  static Widget small = SizedBox(height: 12.h);
   const LanguageSelect({super.key});
 
   final List<Map<String, String>> languages = const [
@@ -25,57 +26,59 @@ class LanguageSelect extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<LanguageProvider>(
       builder: (context, languageProvider, _) {
-        final height = MediaQuery.of(context).size.height;
-
-        return Scaffold(backgroundColor: Colors.transparent,
+        return Scaffold(
+          backgroundColor: Colors.transparent,
           body: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20.w),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  SizedBox(height: 80.h), // replaces height * 0.08
 
-                SizedBox(height: height * 0.08),
+                  Text(
+                    "Workyo",
+                    style: TextStyle(fontFamily: 'CarterOne', fontSize: 28.sp),
+                  ),
 
-                Text("Yo", style: AppTextStyles.yosty1),
+                  SizedBox(height: 24.h),
 
-                AppSpacing.section,
+                  Text(
+                    AppLocalizations.of(context)!.selectLanguage,
+                    style: AppTextStyles.header.copyWith(fontSize: 20.sp),
+                    textAlign: TextAlign.center,
+                  ),
 
-                Text(
-                  AppLocalizations.of(context)!.selectLanguage,
-                  style: AppTextStyles.header,
-                  textAlign: TextAlign.center,
-                ),
+                  SizedBox(height: 24.h),
 
-                AppSpacing.section,
+                  ...languages.map((language) {
+                    return Padding(
+                      padding: EdgeInsets.only(bottom: 12.h),
+                      child: LanguageOptionTile(
+                        title: language["title"]!,
+                        subtitle: language["subtitle"]!,
+                        isSelected:
+                            languageProvider.locale.languageCode ==
+                            language["code"],
+                        onTap: () {
+                          languageProvider.setLocale(Locale(language["code"]!));
+                        },
+                      ),
+                    );
+                  }),
 
-                ...languages.map((language) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: LanguageOptionTile(
-                      title: language["title"]!,
-                      subtitle: language["subtitle"]!,
-                      isSelected:
-                          languageProvider.locale.languageCode ==
-                          language["code"],
-                      onTap: () {
-                        languageProvider.setLocale(
-                          Locale(language["code"]!),
-                        );
-                      },
-                    ),
-                  );
-                }),
+                  SizedBox(height: 24.h),
 
-                
+                  ContinueButton(
+                    text: AppLocalizations.of(context)!.continueText,
+                    onPressed: () async {
+                      context.go('/signup');
+                    },
+                  ),
 
-                ContinueButton(
-                  text: AppLocalizations.of(context)!.continueText,
-                  onPressed: () async {
-                    context.go('/signup');
-                  },
-                ),
-
-                AppSpacing.small,
-              ],
+                  SizedBox(height: 16.h),
+                ],
+              ),
             ),
           ),
         );

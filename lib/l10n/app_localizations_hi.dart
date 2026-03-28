@@ -30,10 +30,10 @@ class AppLocalizationsHi extends AppLocalizations {
   String get createAccount => 'खाता बनाएँ';
 
   @override
-  String get alreadyHaveAccount => 'पहले से ही एक खाता है?';
+  String get alreadyHaveAccount => 'क्या आपके पास पहले से खाता है?';
 
   @override
-  String get logIn => 'लॉग इन करें';
+  String get logIn => 'लॉग इन';
 
   @override
   String get name => 'नाम';
@@ -63,7 +63,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get locationDetected => 'स्थान पता चला';
 
   @override
-  String get jobAlreadyAdded => 'नौकरी पहले से ही जोड़ी गई है';
+  String get jobAlreadyAdded => 'नौकरी पहले से जोड़ी गई है';
 
   @override
   String get detectLocationFirst => 'पहले स्थान का पता लगाएं';
@@ -75,7 +75,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get setupProfile => 'अपनी प्रोफ़ाइल सेट करें';
 
   @override
-  String get completeProfile => 'नौकरी प्राप्त करने के लिए अपनी प्रोफ़ाइल पूरी करें';
+  String get completeProfile => 'नौकरी पाने के लिए अपनी प्रोफ़ाइल पूरी करें';
 
   @override
   String get detectMyLocation => 'मेरा स्थान पता लगाएं';
@@ -130,4 +130,79 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get location => 'स्थान';
+
+  @override
+  String get registerasaworker => 'कर्मचारी के रूप में रजिस्टर करें';
+
+  @override
+  String get phoneNumberNotAvailable => 'फ़ोन नंबर उपलब्ध नहीं है';
+
+  @override
+  String get cannotMakeCall => 'कॉल नहीं कर सकते';
+
+  @override
+  String get call => 'कॉल करें';
+
+  @override
+  String get jobsOffered => 'प्रस्तावित नौकरियां';
+
+  @override
+  String get logInrequired => 'लॉगिन आवश्यक';
+
+  @override
+  String get reviewSubmitted => 'समीक्षा जमा की गई';
+
+  @override
+  String get rateWorker => 'कर्मचारी को रेट करें';
+
+  @override
+  String get writeReview => 'एक समीक्षा लिखें';
+
+  @override
+  String get submit => 'जमा करें';
+
+  @override
+  String get youCannotRateYourself => 'आप खुद को रेट नहीं कर सकते';
+
+  @override
+  String get youAlreadyReviewedThisWorker => 'आपने पहले ही इस कर्मचारी की समीक्षा कर दी है';
+
+  @override
+  String get resetEmailSent => 'पासवर्ड रीसेट ईमेल भेजा गया';
+
+  @override
+  String get send => 'भेजें';
+
+  @override
+  String get cancel => 'रद्द करें';
+
+  @override
+  String get enterYourEmail => 'अपना ईमेल दर्ज करें';
+
+  @override
+  String get resetPassword => 'पासवर्ड रीसेट करें';
+
+  @override
+  String get pleaseWait => 'कृपया प्रतीक्षा करें...';
+
+  @override
+  String get loginFailed => 'लॉगिन विफल';
+
+  @override
+  String get phone => 'फ़ोन';
+
+  @override
+  String get payType => 'भुगतान प्रकार';
+
+  @override
+  String get signUpFailled => 'साइन अप विफल';
+
+  @override
+  String get enterPassword => 'अपना पासवर्ड दर्ज करें';
+
+  @override
+  String get enterEmail => 'अपना ईमेल दर्ज करें';
+
+  @override
+  String get forgotPassword => 'पासवर्ड भूल गए?';
 }

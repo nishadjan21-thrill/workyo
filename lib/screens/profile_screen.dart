@@ -8,9 +8,10 @@ import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:workyo/models/jobtype_model.dart';
 import 'package:workyo/theme/app_buttons.dart';
 import 'package:workyo/theme/app_textstyles.dart';
-
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../models/job_model.dart';
 import '../../models/worker_model.dart';
 import '../../services/firestore_service.dart';
@@ -27,9 +28,19 @@ class ProfileSetupScreen extends StatefulWidget {
 class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   final nameController = TextEditingController();
   final phoneController = TextEditingController();
-  final whatsappController = TextEditingController();
+
   final locationController = TextEditingController();
   final salaryController = TextEditingController();
+  bool isValidNetworkImage(String? url) {
+    if (url == null) return false;
+
+    final trimmed = url.trim();
+
+    if (trimmed.isEmpty) return false;
+    if (trimmed == "file:///") return false;
+
+    return trimmed.startsWith("http");
+  }
 
   final String cloudName = "dqek7pze3";
   final String uploadPreset = "workyo_upload";
@@ -39,7 +50,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   File? profileImageFile;
   String profileImageUrl = "";
 
-  String? selectedJob;
+  JobTypeModel? selectedJob;
   String salaryType = "Per Day";
   bool profileExists = false;
 
@@ -48,14 +59,6 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   double? latitude;
   double? longitude;
 
-  final jobOptions = [
-    "Plumber",
-    "Electrician",
-    "Carpenter",
-    "Cleaner",
-    "Driver",
-  ];
-
   final firestoreService = FirestoreService();
 
   @override
@@ -63,13 +66,14 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     super.initState();
     loadProfile();
     loadJobs();
+    loadJobsMaster();
   }
 
   @override
   void dispose() {
     nameController.dispose();
     phoneController.dispose();
-    whatsappController.dispose();
+
     locationController.dispose();
     salaryController.dispose();
     super.dispose();
@@ -140,6 +144,492 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     );
   }
 
+  Future<void> uploadAllJobs() async {
+    final jobtype = {
+      ///  CONSTRUCTION
+      "mason": {
+        "category": "construction",
+        "name": {"en": "Mason", "ml": "കല്ല് പണി", "hi": "राज मिस्त्री"},
+        "keywords": ["mason", "kallu pani", "kallupani", "construction"],
+      },
+      "kinar_pani": {
+        "category": "construction",
+        "name": {"en": "Well Work", "ml": "കിണർ പണി", "hi": "कुआं कार्य"},
+        "keywords": ["kinar", "well work"],
+      },
+      "kettupani": {
+        "category": "construction",
+        "name": {"en": "Construction Work", "ml": "കെട്ടുപണി", "hi": "निर्माण"},
+        "keywords": ["kettupani"],
+      },
+      "painter": {
+        "category": "construction",
+        "name": {"en": "Painter", "ml": "പെയിന്റിംഗ്", "hi": "पेंटर"},
+        "keywords": ["painting"],
+      },
+      "carpenter": {
+        "category": "construction",
+        "name": {"en": "Carpenter", "ml": "ആശാരി", "hi": "बढ़ई"},
+        "keywords": ["wood"],
+      },
+      "plumber": {
+        "category": "construction",
+        "name": {"en": "Plumber", "ml": "പ്ലംബർ", "hi": "प्लंबर"},
+        "keywords": ["pipe"],
+      },
+      "electrician": {
+        "category": "construction",
+        "name": {
+          "en": "Electrician",
+          "ml": "ഇലക്ട്രീഷ്യൻ",
+          "hi": "इलेक्ट्रीशियन",
+        },
+        "keywords": ["electric"],
+      },
+      "welder": {
+        "category": "construction",
+        "name": {"en": "Welder", "ml": "വെൽഡിംഗ്", "hi": "वेल्डर"},
+        "keywords": ["welding"],
+      },
+      "tile_worker": {
+        "category": "construction",
+        "name": {"en": "Tile Worker", "ml": "ടൈൽ പണി", "hi": "टाइल"},
+        "keywords": ["tiles"],
+      },
+
+      /// 🔧 REPAIR
+      "mobile_repair": {
+        "category": "repair",
+        "name": {
+          "en": "Mobile Repair",
+          "ml": "മൊബൈൽ റിപ്പയർ",
+          "hi": "मोबाइल रिपेयर",
+        },
+        "keywords": ["phone"],
+      },
+      "ac_technician": {
+        "category": "repair",
+        "name": {"en": "AC Technician", "ml": "എസി ടെക്നീഷ്യൻ", "hi": "एसी"},
+        "keywords": ["ac"],
+      },
+      "mechanic": {
+        "category": "repair",
+        "name": {"en": "Mechanic", "ml": "മെക്കാനിക്", "hi": "मिस्त्री"},
+        "keywords": ["vehicle"],
+      },
+      "cctv_technician": {
+        "category": "repair",
+        "name": {"en": "CCTV Technician", "ml": "സിസിടിവി", "hi": "सीसीटीवी"},
+        "keywords": ["camera"],
+      },
+
+      /// 🎨 CREATIVE
+      "graphic_designer": {
+        "category": "creative",
+        "name": {
+          "en": "Graphic Designer",
+          "ml": "ഗ്രാഫിക് ഡിസൈനർ",
+          "hi": "डिजाइनर",
+        },
+        "keywords": ["design"],
+      },
+      "video_editor": {
+        "category": "creative",
+        "name": {"en": "Video Editor", "ml": "വീഡിയോ എഡിറ്റർ", "hi": "वीडियो"},
+        "keywords": ["editing"],
+      },
+      "photographer": {
+        "category": "creative",
+        "name": {"en": "Photographer", "ml": "ഫോട്ടോഗ്രാഫർ", "hi": "फोटो"},
+        "keywords": ["camera"],
+      },
+      "content_creator": {
+        "category": "creative",
+        "name": {
+          "en": "Content Creator",
+          "ml": "കണ്ടന്റ് ക്രിയേറ്റർ",
+          "hi": "कंटेंट",
+        },
+        "keywords": ["youtube", "instagram"],
+      },
+
+      /// 🎤 PERFORMERS
+      "singer": {
+        "category": "performer",
+        "name": {"en": "Singer", "ml": "ഗായകൻ", "hi": "गायक"},
+        "keywords": ["music"],
+      },
+      "dancer": {
+        "category": "performer",
+        "name": {"en": "Dancer", "ml": "നർത്തകൻ", "hi": "नर्तक"},
+        "keywords": ["dance"],
+      },
+      "dj": {
+        "category": "performer",
+        "name": {"en": "DJ", "ml": "ഡിജെ", "hi": "डीजे"},
+        "keywords": ["dj"],
+      },
+      "event_manager": {
+        "category": "performer",
+        "name": {"en": "Event Manager", "ml": "ഇവന്റ് മാനേജർ", "hi": "इवेंट"},
+        "keywords": ["event"],
+      },
+
+      /// 💻 IT
+      "flutter_dev": {
+        "category": "it",
+        "name": {
+          "en": "Flutter Developer",
+          "ml": "ഫ്ലട്ടർ ഡെവലപ്പർ",
+          "hi": "फ्लटर",
+        },
+        "keywords": ["flutter"],
+      },
+      "web_dev": {
+        "category": "it",
+        "name": {"en": "Web Developer", "ml": "വെബ് ഡെവലപ്പർ", "hi": "वेब"},
+        "keywords": ["web"],
+      },
+      "android_dev": {
+        "category": "it",
+        "name": {
+          "en": "Android Developer",
+          "ml": "ആൻഡ്രോയിഡ്",
+          "hi": "एंड्रॉइड",
+        },
+        "keywords": ["android"],
+      },
+      "backend_dev": {
+        "category": "it",
+        "name": {"en": "Backend Developer", "ml": "ബാക്ക്എൻഡ്", "hi": "बैकएंड"},
+        "keywords": ["api"],
+      },
+      "fullstack_dev": {
+        "category": "it",
+        "name": {
+          "en": "Full Stack Developer",
+          "ml": "ഫുൾ സ്റ്റാക്ക്",
+          "hi": "फुल स्टैक",
+        },
+        "keywords": ["fullstack"],
+      },
+
+      /// 🚗 TRANSPORT
+      "driver": {
+        "category": "transport",
+        "name": {"en": "Driver", "ml": "ഡ്രൈവർ", "hi": "ड्राइवर"},
+        "keywords": ["car"],
+      },
+      "delivery": {
+        "category": "transport",
+        "name": {"en": "Delivery Partner", "ml": "ഡെലിവറി", "hi": "डिलीवरी"},
+        "keywords": ["delivery"],
+      },
+
+      /// 🏠 DOMESTIC
+      "maid": {
+        "category": "domestic",
+        "name": {"en": "Maid", "ml": "വീട് ജോലി", "hi": "कामवाली"},
+        "keywords": ["cleaning"],
+      },
+      "cook": {
+        "category": "domestic",
+        "name": {"en": "Cook", "ml": "അടുക്കള ജോലി", "hi": "रसोइया"},
+        "keywords": ["cooking"],
+      },
+
+      /// 🌾 TRADITIONAL
+      "farmer": {
+        "category": "traditional",
+        "name": {"en": "Farmer", "ml": "കർഷകൻ", "hi": "किसान"},
+        "keywords": ["farming"],
+      },
+      "coconut_climber": {
+        "category": "traditional",
+        "name": {"en": "Coconut Climber", "ml": "തേങ്ങുകയറ്റം", "hi": "नारियल"},
+        "keywords": ["tree climbing"],
+      },
+
+      /// 🏗️ ADVANCED CONSTRUCTION
+      "architect": {
+        "category": "construction",
+        "name": {"en": "Architect", "ml": "ആർക്കിടെക്റ്റ്", "hi": "आर्किटेक्ट"},
+        "keywords": ["design building"],
+      },
+      "civil_engineer": {
+        "category": "construction",
+        "name": {
+          "en": "Civil Engineer",
+          "ml": "സിവിൽ എഞ്ചിനീയർ",
+          "hi": "सिविल इंजीनियर",
+        },
+        "keywords": ["construction engineer"],
+      },
+      "site_supervisor": {
+        "category": "construction",
+        "name": {
+          "en": "Site Supervisor",
+          "ml": "സൈറ്റ് സൂപ്പർവൈസർ",
+          "hi": "साइट सुपरवाइजर",
+        },
+        "keywords": ["site"],
+      },
+
+      /// 🔧 ELECTRICAL & TECH
+      "solar_technician": {
+        "category": "repair",
+        "name": {
+          "en": "Solar Technician",
+          "ml": "സോളാർ ടെക്",
+          "hi": "सोलर तकनीशियन",
+        },
+        "keywords": ["solar"],
+      },
+      "generator_technician": {
+        "category": "repair",
+        "name": {
+          "en": "Generator Technician",
+          "ml": "ജനറേറ്റർ ടെക്",
+          "hi": "जनरेटर",
+        },
+        "keywords": ["generator"],
+      },
+      "elevator_technician": {
+        "category": "repair",
+        "name": {
+          "en": "Elevator Technician",
+          "ml": "ലിഫ്റ്റ് ടെക്",
+          "hi": "लिफ्ट",
+        },
+        "keywords": ["lift"],
+      },
+
+      /// 💻 IT GLOBAL ROLES
+      "ios_dev": {
+        "category": "it",
+        "name": {"en": "iOS Developer", "ml": "ഐഒഎസ് ഡെവലപ്പർ", "hi": "आईओएस"},
+        "keywords": ["ios"],
+      },
+      "devops_engineer": {
+        "category": "it",
+        "name": {"en": "DevOps Engineer", "ml": "ഡെവ്‌ഓപ്സ്", "hi": "डेवऑप्स"},
+        "keywords": ["devops"],
+      },
+      "cloud_engineer": {
+        "category": "it",
+        "name": {
+          "en": "Cloud Engineer",
+          "ml": "ക്ലൗഡ് എഞ്ചിനീയർ",
+          "hi": "क्लाउड",
+        },
+        "keywords": ["aws", "cloud"],
+      },
+      "game_developer": {
+        "category": "it",
+        "name": {"en": "Game Developer", "ml": "ഗെയിം ഡെവലപ്പർ", "hi": "गेम"},
+        "keywords": ["game dev"],
+      },
+      "blockchain_dev": {
+        "category": "it",
+        "name": {
+          "en": "Blockchain Developer",
+          "ml": "ബ്ലോക്ക്ചെയിൻ",
+          "hi": "ब्लॉकचेन",
+        },
+        "keywords": ["crypto"],
+      },
+
+      /// 🎨 DESIGN & MEDIA
+      "fashion_designer": {
+        "category": "creative",
+        "name": {"en": "Fashion Designer", "ml": "ഫാഷൻ ഡിസൈനർ", "hi": "फैशन"},
+        "keywords": ["clothes"],
+      },
+      "interior_designer": {
+        "category": "creative",
+        "name": {
+          "en": "Interior Designer",
+          "ml": "ഇന്റീരിയർ",
+          "hi": "इंटीरियर",
+        },
+        "keywords": ["home design"],
+      },
+      "3d_artist": {
+        "category": "creative",
+        "name": {"en": "3D Artist", "ml": "3D ആർട്ടിസ്റ്റ്", "hi": "3D कलाकार"},
+        "keywords": ["3d"],
+      },
+      "vfx_artist": {
+        "category": "creative",
+        "name": {"en": "VFX Artist", "ml": "വിഎഫ്എക്സ്", "hi": "वीएफएक्स"},
+        "keywords": ["effects"],
+      },
+
+      /// 🎤 ENTERTAINMENT PRO
+      "comedian": {
+        "category": "performer",
+        "name": {"en": "Comedian", "ml": "ഹാസ്യകലാകാരൻ", "hi": "कॉमेडियन"},
+        "keywords": ["comedy"],
+      },
+      "magician": {
+        "category": "performer",
+        "name": {"en": "Magician", "ml": "മാജീഷ്യൻ", "hi": "जादूगर"},
+        "keywords": ["magic"],
+      },
+      "model": {
+        "category": "performer",
+        "name": {"en": "Model", "ml": "മോഡൽ", "hi": "मॉडल"},
+        "keywords": ["fashion"],
+      },
+
+      /// 🚗 LOGISTICS ADVANCED
+      "logistics_manager": {
+        "category": "transport",
+        "name": {
+          "en": "Logistics Manager",
+          "ml": "ലോജിസ്റ്റിക്സ്",
+          "hi": "लॉजिस्टिक्स",
+        },
+        "keywords": ["supply"],
+      },
+      "warehouse_worker": {
+        "category": "transport",
+        "name": {"en": "Warehouse Worker", "ml": "ഗോഡൗൺ ജോലി", "hi": "गोदाम"},
+        "keywords": ["warehouse"],
+      },
+
+      /// 🏥 MEDICAL EXPANDED
+      "doctor": {
+        "category": "health",
+        "name": {"en": "Doctor", "ml": "ഡോക്ടർ", "hi": "डॉक्टर"},
+        "keywords": ["medical"],
+      },
+      "pharmacist": {
+        "category": "health",
+        "name": {"en": "Pharmacist", "ml": "ഫാർമസിസ്റ്റ്", "hi": "फार्मासिस्ट"},
+        "keywords": ["medicine"],
+      },
+      "lab_technician": {
+        "category": "health",
+        "name": {"en": "Lab Technician", "ml": "ലാബ് ടെക്", "hi": "लैब"},
+        "keywords": ["lab"],
+      },
+
+      /// 🧑‍🏫 EDUCATION GLOBAL
+      "professor": {
+        "category": "education",
+        "name": {"en": "Professor", "ml": "പ്രൊഫസർ", "hi": "प्रोफेसर"},
+        "keywords": ["college"],
+      },
+      "online_tutor": {
+        "category": "education",
+        "name": {"en": "Online Tutor", "ml": "ഓൺലൈൻ ട്യൂട്ടർ", "hi": "ऑनलाइन"},
+        "keywords": ["teaching online"],
+      },
+
+      /// 🛍️ BUSINESS GLOBAL
+      "entrepreneur": {
+        "category": "business",
+        "name": {"en": "Entrepreneur", "ml": "ഉദ്യമി", "hi": "उद्यमी"},
+        "keywords": ["business"],
+      },
+      "accountant": {
+        "category": "business",
+        "name": {"en": "Accountant", "ml": "അക്കൗണ്ടന്റ്", "hi": "लेखाकार"},
+        "keywords": ["finance"],
+      },
+      "hr_manager": {
+        "category": "business",
+        "name": {"en": "HR Manager", "ml": "എച്ച്ആർ", "hi": "एचआर"},
+        "keywords": ["hr"],
+      },
+
+      /// 🌾 AGRICULTURE GLOBAL
+      "organic_farmer": {
+        "category": "traditional",
+        "name": {
+          "en": "Organic Farmer",
+          "ml": "ഓർഗാനിക് കർഷകൻ",
+          "hi": "जैविक किसान",
+        },
+        "keywords": ["organic"],
+      },
+      "fish_farmer": {
+        "category": "traditional",
+        "name": {"en": "Fish Farmer", "ml": "മത്സ്യ കർഷകൻ", "hi": "मछली"},
+        "keywords": ["fish"],
+      },
+
+      /// 🏠 DOMESTIC ADVANCED
+      "security_guard": {
+        "category": "domestic",
+        "name": {"en": "Security Guard", "ml": "സുരക്ഷാ ഗാർഡ്", "hi": "गार्ड"},
+        "keywords": ["security"],
+      },
+      "driver_personal": {
+        "category": "domestic",
+        "name": {
+          "en": "Personal Driver",
+          "ml": "സ്വകാര്യ ഡ്രൈവർ",
+          "hi": "ड्राइवर",
+        },
+        "keywords": ["driver"],
+      },
+
+      /// ⚡ FREELANCE GLOBAL
+      "freelancer": {
+        "category": "business",
+        "name": {"en": "Freelancer", "ml": "ഫ്രീലാൻസർ", "hi": "फ्रीलांसर"},
+        "keywords": ["remote"],
+      },
+      "virtual_assistant": {
+        "category": "business",
+        "name": {
+          "en": "Virtual Assistant",
+          "ml": "വിർച്വൽ അസിസ്റ്റന്റ്",
+          "hi": "वर्चुअल",
+        },
+        "keywords": ["assistant"],
+      },
+      "seo_expert": {
+        "category": "it",
+        "name": {"en": "SEO Expert", "ml": "എസ്‌ഇഒ", "hi": "एसईओ"},
+        "keywords": ["seo"],
+      },
+      "digital_marketer": {
+        "category": "business",
+        "name": {
+          "en": "Digital Marketer",
+          "ml": "ഡിജിറ്റൽ മാർക്കറ്റിംഗ്",
+          "hi": "डिजिटल",
+        },
+        "keywords": ["ads"],
+      },
+    };
+
+    final collection = FirebaseFirestore.instance.collection("jobtypes");
+
+    for (var entry in jobtype.entries) {
+      await collection.doc(entry.key).set(entry.value);
+    }
+
+    print("🔥 ALL JOBS UPLOADED SUCCESSFULLY");
+  }
+
+  List<JobTypeModel> allJobs = [];
+
+  Future<void> loadJobsMaster() async {
+    final snapshot = await FirebaseFirestore.instance
+        .collection("jobtypes")
+        .get();
+
+    allJobs = snapshot.docs
+        .map((doc) => JobTypeModel.fromFirestore(doc.id, doc.data()))
+        .toList();
+
+    setState(() {});
+  }
+
   /// LOAD PROFILE
   Future<void> loadProfile() async {
     final uid = FirebaseAuth.instance.currentUser!.uid;
@@ -160,7 +650,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
     nameController.text = data["name"] ?? "";
     phoneController.text = data["phone"] ?? "";
-    whatsappController.text = data["whatsapp"] ?? "";
+
     locationController.text = data["locationName"] ?? "";
     availableToday = data["availableToday"] ?? false;
     profileImageUrl = data["profileImage"] ?? "";
@@ -176,12 +666,9 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     final uid = FirebaseAuth.instance.currentUser!.uid;
 
     final snapshot = await FirebaseFirestore.instance
-        .collection("workers")
-        .doc(uid)
         .collection("jobs")
+        .where("workerId", isEqualTo: uid)
         .get();
-
-    jobs.clear();
 
     for (var doc in snapshot.docs) {
       final data = doc.data();
@@ -196,33 +683,6 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     }
 
     setState(() {});
-  }
-
-  /// ADD JOB
-  void addJob() {
-    if (selectedJob == null || salaryController.text.isEmpty) return;
-
-    bool exists = jobs.any((job) => job.jobType == selectedJob);
-
-    if (exists) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context)!.jobAlreadyAdded)),
-      );
-      return;
-    }
-
-    setState(() {
-      jobs.add(
-        JobModel(
-          jobType: selectedJob!,
-          expectedSalary: salaryController.text,
-          salaryType: salaryType,
-        ),
-      );
-
-      salaryController.clear();
-      selectedJob = null;
-    });
   }
 
   /// SAVE PROFILE
@@ -245,7 +705,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     final worker = WorkerModel(
       name: nameController.text,
       phone: phoneController.text,
-      whatsapp: whatsappController.text,
+
       locationName: locationController.text,
       profileImage: imageUrl,
       availableToday: availableToday,
@@ -265,198 +725,280 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final height = MediaQuery.of(context).size.height;
+    final l10n = AppLocalizations.of(context)!;
+
+    String lang = Localizations.localeOf(context).languageCode;
+    if (lang != "ml" && lang != "hi") lang = "en";
+
+    void addJob() {
+      if (selectedJob == null || salaryController.text.isEmpty) return;
+
+      bool exists = jobs.any((job) => job.jobType == selectedJob);
+
+      if (exists) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.jobAlreadyAdded)));
+        return;
+      }
+
+      setState(() {
+        jobs.add(
+          JobModel(
+            jobType: selectedJob!.getName(lang),
+            expectedSalary: salaryController.text,
+            salaryType: salaryType,
+          ),
+        );
+
+        salaryController.clear();
+        selectedJob = null;
+      });
+    }
 
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(16.w),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SizedBox(height: height * 0.05),
+              SizedBox(height: 50.h),
 
-              // Header
+              /// 🔹 HEADER
               Center(
                 child: Text(
-                  profileExists
-                      ? AppLocalizations.of(context)!.editProfile
-                      : AppLocalizations.of(context)!.setupProfile,
+                  profileExists ? l10n.editProfile : l10n.setupProfile,
                   style: AppTextStyles.subtitle.copyWith(
-                    fontSize: 22,
+                    fontSize: 20.sp,
                     fontWeight: FontWeight.w800,
                     color: Colors.white,
                   ),
                 ),
               ),
 
-              SizedBox(height: height * 0.04),
+              SizedBox(height: 30.h),
 
-              // Profile image
+              /// 🔹 PROFILE IMAGE
               Center(
                 child: GestureDetector(
                   onTap: pickImage,
                   child: CircleAvatar(
-                    radius: 55,
+                    radius: 55.r,
                     backgroundImage: profileImageFile != null
                         ? FileImage(profileImageFile!)
-                        : (profileImageUrl.isNotEmpty
-                                ? NetworkImage(profileImageUrl)
-                                : null)
-                            as ImageProvider?,
+                        : (isValidNetworkImage(profileImageUrl)
+                              ? NetworkImage(profileImageUrl)
+                              : null),
                     backgroundColor: Colors.white24,
-                    child: profileImageFile == null && profileImageUrl.isEmpty
-                        ? const Icon(Icons.camera_alt,
-                            size: 30, color: Colors.white)
+                    child:
+                        profileImageFile == null &&
+                            !isValidNetworkImage(profileImageUrl)
+                        ? Icon(
+                            Icons.camera_alt,
+                            size: 28.sp,
+                            color: Colors.white,
+                          )
                         : null,
                   ),
                 ),
               ),
 
-              SizedBox(height: height * 0.04),
+              SizedBox(height: 30.h),
 
-              // Replace all text fields with PremiumTextField
+              /// 🔹 INPUTS
+              PremiumTextField(hint: l10n.name, controller: nameController),
+
+              SizedBox(height: 12.h),
+
               PremiumTextField(
-                hint: AppLocalizations.of(context)!.name,
-                controller: nameController,
-              ),
-              PremiumTextField(
-                hint: "phone",
+                hint: l10n.phone,
                 controller: phoneController,
                 icon: Icons.phone,
               ),
+
+              SizedBox(height: 12.h),
+
               PremiumTextField(
-                hint: "whatsapp",
-                controller: whatsappController,
-                icon: Icons.phone_android,
-              ),
-              PremiumTextField(
-                hint: AppLocalizations.of(context)!.location,
+                hint: l10n.location,
                 controller: locationController,
                 icon: Icons.location_on,
               ),
 
-              SizedBox(height: height * 0.02),
+              SizedBox(height: 16.h),
 
+              /// 🔹 LOCATION BUTTON
               AppCard(
                 child: ListTile(
-                  leading: const Icon(Icons.my_location, color: Colors.white),
-                  title: Text(
-                    AppLocalizations.of(context)!.detectMyLocation,
-                    style: AppTextStyles.subtitle.copyWith(color: Colors.white),
+                  leading: Icon(
+                    Icons.my_location,
+                    color: Colors.white,
+                    size: 20.sp,
                   ),
-                  trailing:
-                      const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.white),
+                  title: Text(
+                    l10n.detectMyLocation,
+                    style: AppTextStyles.subtitle.copyWith(
+                      fontSize: 14.sp,
+                      color: Colors.white,
+                    ),
+                  ),
+                  trailing: Icon(
+                    Icons.arrow_forward_ios,
+                    size: 14.sp,
+                    color: Colors.white,
+                  ),
                   onTap: detectLocation,
                 ),
               ),
 
-              SizedBox(height: height * 0.04),
+              SizedBox(height: 30.h),
 
-              // Job selection
+              /// 🔹 JOB DROPDOWN
               DropdownButtonFormField(
-                style: AppTextStyles.subtitle.copyWith(color: Colors.white),
+                style: AppTextStyles.subtitle.copyWith(
+                  fontSize: 14.sp,
+                  color: Colors.yellowAccent,
+                ),
                 dropdownColor: Colors.black87,
                 hint: Text(
-                  AppLocalizations.of(context)!.selectJob,
-                  style: AppTextStyles.subtitle.copyWith(color: Colors.white70),
+                  l10n.selectJob,
+                  style: AppTextStyles.subtitle.copyWith(
+                    fontSize: 14.sp,
+                    color: Colors.white70,
+                  ),
                 ),
-                items: jobOptions.map((job) {
+                items: allJobs.map((job) {
                   return DropdownMenuItem(
-                      value: job,
-                      child: Text(job, style: const TextStyle(color: Colors.white)));
+                    value: job,
+                    child: Text(
+                      job.getName(lang),
+                      style: TextStyle(color: Colors.white, fontSize: 14.sp),
+                    ),
+                  );
                 }).toList(),
                 onChanged: (value) {
-                  setState(() {
-                    selectedJob = value;
-                  });
+                  setState(() => selectedJob = value);
                 },
               ),
 
-              SizedBox(height: height * 0.02),
+              SizedBox(height: 12.h),
 
-               PremiumTextField(
-                      hint: AppLocalizations.of(context)!.expectedSalary,
-                      controller: salaryController,
-                      icon: Icons.attach_money,
+              PremiumTextField(
+                hint: l10n.expectedSalary,
+                controller: salaryController,
+                icon: Icons.attach_money,
+              ),
+
+              SizedBox(height: 12.h),
+
+              DropdownButtonFormField<String>(
+                dropdownColor: Colors.black54,
+                hint: Text(
+                  l10n.payType,
+                  style: AppTextStyles.subtitle.copyWith(
+                    fontSize: 14.sp,
+                    color: Colors.white70,
+                  ),
+                ),
+                items: [
+                  DropdownMenuItem(
+                    value: "Per Day",
+                    child: Text(l10n.perDay, style: TextStyle(fontSize: 13.sp)),
+                  ),
+                  DropdownMenuItem(
+                    value: "Per Hour",
+                    child: Text(
+                      l10n.perHour,
+                      style: TextStyle(fontSize: 13.sp),
                     ),
-                  
-                  const SizedBox(width: 12),
-                  
-                     DropdownButtonFormField<String>(
-                      dropdownColor: Colors.black54,
-                      hint: Text(
-                        "Pay type",
-                        style: AppTextStyles.subtitle.copyWith(color: Colors.white70),
-                      ),
-                      items: const [
-                        DropdownMenuItem(value: "Per Day", child: Text("Per Day",style: TextStyle(color: Colors.white70),)),
-                        DropdownMenuItem(value: "Per Hour", child: Text("Per Hour",style: TextStyle(color: Colors.white70),)),
-                        DropdownMenuItem(value: "Monthly", child: Text("Monthly",style: TextStyle(color: Colors.white70),)),
-                        DropdownMenuItem(value: "Contract", child: Text("Contract",style: TextStyle(color: Colors.white70),)),
-                      ],
-                      onChanged: (value) {
-                        setState(() {
-                          salaryType = value!;
-                        });
-                      },
+                  ),
+                  DropdownMenuItem(
+                    value: "Monthly",
+                    child: Text(
+                      l10n.monthly,
+                      style: TextStyle(fontSize: 13.sp),
                     ),
-                  
-                
-              
+                  ),
+                  DropdownMenuItem(
+                    value: "Contract",
+                    child: Text(
+                      l10n.contract,
+                      style: TextStyle(fontSize: 13.sp),
+                    ),
+                  ),
+                ],
+                onChanged: (value) => setState(() => salaryType = value!),
+              ),
 
-              SizedBox(height: height * 0.02),
+              SizedBox(height: 16.h),
 
+              /// 🔹 ADD JOB BUTTON
               Center(
-                child: ElevatedButton(style: AppButtons.primary,
+                child: ElevatedButton(
+                  style: AppButtons.primary,
                   onPressed: addJob,
-                  child: Text(AppLocalizations.of(context)!.addJob),
+                  child: Text(l10n.addJob, style: TextStyle(fontSize: 14.sp)),
                 ),
               ),
 
-              SizedBox(height: height * 0.02),
+              SizedBox(height: 12.h),
 
+              /// 🔹 JOB CHIPS
               Wrap(
-                spacing: 8,
+                spacing: 8.w,
+                runSpacing: 8.h,
                 children: jobs.map((job) {
-                  return Chip(backgroundColor: Colors.yellow,
+                  return Chip(
+                    backgroundColor: Colors.yellow,
                     label: Text(
                       "${job.jobType} • ₹${job.expectedSalary}/${job.salaryType}",
-                      style: const TextStyle(color: Colors.black),
+                      style: TextStyle(fontSize: 12.sp, color: Colors.black),
                     ),
                     onDeleted: () {
-                      setState(() {
-                        jobs.remove(job);
-                      });
+                      setState(() => jobs.remove(job));
                     },
                   );
                 }).toList(),
               ),
 
-              SizedBox(height: height * 0.03),
+              SizedBox(height: 20.h),
 
+              /// 🔹 AVAILABILITY
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(AppLocalizations.of(context)!.available,
-                      style: AppTextStyles.subtitle.copyWith(color: Colors.white)),
+                  Text(
+                    l10n.available,
+                    style: AppTextStyles.subtitle.copyWith(
+                      fontSize: 14.sp,
+                      color: Colors.white,
+                    ),
+                  ),
                   Switch(
                     value: availableToday,
-                    onChanged: (value) {
-                      setState(() {
-                        availableToday = value;
-                      });
-                    },
+                    onChanged: (v) => setState(() => availableToday = v),
                   ),
                 ],
               ),
 
-              ElevatedButton.icon(style: AppButtons.primary,
-                onPressed: saveProfile,
-                icon: const Icon(Icons.save),
-                label: Text(AppLocalizations.of(context)!.saveProfile),
+              SizedBox(height: 16.h),
+
+              /// 🔹 SAVE BUTTON
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  style: AppButtons.primary,
+                  onPressed: saveProfile,
+                  icon: Icon(Icons.save, size: 18.sp),
+                  label: Text(
+                    l10n.saveProfile,
+                    style: TextStyle(fontSize: 14.sp),
+                  ),
+                ),
               ),
+
+              SizedBox(height: 20.h),
             ],
           ),
         ),

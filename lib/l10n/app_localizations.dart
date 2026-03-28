@@ -342,6 +342,156 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Location'**
   String get location;
+
+  /// No description provided for @registerasaworker.
+  ///
+  /// In en, this message translates to:
+  /// **'Register as a Worker'**
+  String get registerasaworker;
+
+  /// No description provided for @phoneNumberNotAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone number not available'**
+  String get phoneNumberNotAvailable;
+
+  /// No description provided for @cannotMakeCall.
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot make call'**
+  String get cannotMakeCall;
+
+  /// No description provided for @call.
+  ///
+  /// In en, this message translates to:
+  /// **'Call'**
+  String get call;
+
+  /// No description provided for @jobsOffered.
+  ///
+  /// In en, this message translates to:
+  /// **'Jobs Offered'**
+  String get jobsOffered;
+
+  /// No description provided for @logInrequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Login required'**
+  String get logInrequired;
+
+  /// No description provided for @reviewSubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Review submitted'**
+  String get reviewSubmitted;
+
+  /// No description provided for @rateWorker.
+  ///
+  /// In en, this message translates to:
+  /// **'Rate Worker'**
+  String get rateWorker;
+
+  /// No description provided for @writeReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Write a review'**
+  String get writeReview;
+
+  /// No description provided for @submit.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit'**
+  String get submit;
+
+  /// No description provided for @youCannotRateYourself.
+  ///
+  /// In en, this message translates to:
+  /// **'You cannot rate yourself'**
+  String get youCannotRateYourself;
+
+  /// No description provided for @youAlreadyReviewedThisWorker.
+  ///
+  /// In en, this message translates to:
+  /// **'You have already reviewed this worker'**
+  String get youAlreadyReviewedThisWorker;
+
+  /// No description provided for @resetEmailSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Password reset email sent'**
+  String get resetEmailSent;
+
+  /// No description provided for @send.
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get send;
+
+  /// No description provided for @cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get cancel;
+
+  /// No description provided for @enterYourEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your email'**
+  String get enterYourEmail;
+
+  /// No description provided for @resetPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset Password'**
+  String get resetPassword;
+
+  /// No description provided for @pleaseWait.
+  ///
+  /// In en, this message translates to:
+  /// **'Please wait...'**
+  String get pleaseWait;
+
+  /// No description provided for @loginFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Login failed'**
+  String get loginFailed;
+
+  /// No description provided for @phone.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone'**
+  String get phone;
+
+  /// No description provided for @payType.
+  ///
+  /// In en, this message translates to:
+  /// **'Pay Type'**
+  String get payType;
+
+  /// No description provided for @signUpFailled.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign up failed'**
+  String get signUpFailled;
+
+  /// No description provided for @enterPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your password'**
+  String get enterPassword;
+
+  /// No description provided for @enterEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your email'**
+  String get enterEmail;
+
+  /// No description provided for @forgotPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Forgot Password?'**
+  String get forgotPassword;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

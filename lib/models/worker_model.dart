@@ -1,8 +1,7 @@
 class WorkerModel {
-
   String name;
   String phone;
-  String whatsapp;
+
   String locationName;
   String profileImage;
 
@@ -16,7 +15,7 @@ class WorkerModel {
   WorkerModel({
     required this.name,
     required this.phone,
-    required this.whatsapp,
+
     required this.locationName,
     required this.profileImage,
     required this.availableToday,
@@ -29,7 +28,7 @@ class WorkerModel {
     return {
       "name": name,
       "phone": phone,
-      "whatsapp": whatsapp,
+
       "locationName": locationName,
       "profileImage": profileImage,
       "availableToday": availableToday,
@@ -37,27 +36,27 @@ class WorkerModel {
       "longitude": longitude,
       "jobTypes": jobTypes,
       "rating": 0,
-      "createdAt": DateTime.now()
+      "createdAt": DateTime.now(),
     };
-    
   }
+
   factory WorkerModel.fromMap(Map<String, dynamic> data) {
-  return WorkerModel(
-    name: data["name"] ?? "",
-    phone: data["phone"] ?? "",
-    whatsapp: data["whatsapp"] ?? "",
-    locationName: data["locationName"] ?? "",
-    profileImage: data["profileImage"] ?? "",
+    return WorkerModel(
+      name: data["name"] ?? "",
+      phone: data["phone"] ?? "",
 
-    // ✅ FIXED BOOLEAN
-    availableToday: (data["availableToday"] ?? false) == true,
+      locationName: data["locationName"] ?? "",
+      profileImage: data["profileImage"] ?? "",
 
-    // ✅ SAFE DOUBLE CONVERSION
-    latitude: (data["latitude"] ?? 0).toDouble(),
-    longitude: (data["longitude"] ?? 0).toDouble(),
+      // ✅ FIXED BOOLEAN
+      availableToday: (data["availableToday"] ?? false) == true,
 
-    // ✅ SAFE LIST
-    jobTypes: List<String>.from(data["jobTypes"] ?? []),
-  );
-}
+      // ✅ SAFE DOUBLE CONVERSION
+      latitude: (data["latitude"] ?? 0).toDouble(),
+      longitude: (data["longitude"] ?? 0).toDouble(),
+
+      // ✅ SAFE LIST
+      jobTypes: List<String>.from(data["jobTypes"] ?? []),
+    );
+  }
 }

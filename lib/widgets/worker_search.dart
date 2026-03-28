@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../theme/app_textstyles.dart';
 import '../theme/app_colors.dart';
 
@@ -28,10 +29,12 @@ class _WorkersSearchBarState extends State<WorkersSearchBar> {
 
   void _onChanged(String value) {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
+
     _debounce = Timer(const Duration(milliseconds: 500), () {
       widget.onSearchChanged(value.trim());
     });
-    setState(() {}); // Update clear icon visibility
+
+    setState(() {}); // update clear icon
   }
 
   @override
@@ -43,38 +46,68 @@ class _WorkersSearchBarState extends State<WorkersSearchBar> {
 
   @override
   Widget build(BuildContext context) {
-    return TextField(
-      controller: _controller,
-      style: AppTextStyles.subtitle,
-      onChanged: _onChanged,
-      decoration: InputDecoration(
-        hintText: widget.hintText,
-        filled: true,
-        fillColor: Colors.transparent,
-        prefixIcon: const Icon(Icons.search, color: AppColors.primary),
-        suffixIcon: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (_controller.text.isNotEmpty)
-              GestureDetector(
-                onTap: () {
-                  _controller.clear();
-                  widget.onSearchChanged('');
-                  setState(() {});
-                },
-                child: const Icon(Icons.close, color: AppColors.primary),
-              ),
-            if (widget.onFilterPressed != null)
-              IconButton(
-                icon: const Icon(Icons.filter_list, color: AppColors.primary),
-                onPressed: widget.onFilterPressed,
-              ),
-          ],
-        ),
-        contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16.w),
+      child: TextField(
+        controller: _controller,
+        style: AppTextStyles.subtitle.copyWith(fontSize: 14.sp),
+        onChanged: _onChanged,
+
+        decoration: InputDecoration(
+          hintText: widget.hintText,
+          hintStyle: TextStyle(fontSize: 13.sp),
+
+          filled: true,
+          fillColor: Colors.grey[900],
+
+          /// 🔍 PREFIX ICON
+          prefixIcon: Padding(
+            padding: EdgeInsets.all(12.w),
+            child: Icon(Icons.search, color: AppColors.primary, size: 20.sp),
+          ),
+
+          /// ❌ + FILTER ICONS
+          suffixIcon: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (_controller.text.isNotEmpty)
+                GestureDetector(
+                  onTap: () {
+                    _controller.clear();
+                    widget.onSearchChanged('');
+                    setState(() {});
+                  },
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 6.w),
+                    child: Icon(
+                      Icons.close,
+                      color: AppColors.primary,
+                      size: 18.sp,
+                    ),
+                  ),
+                ),
+
+              if (widget.onFilterPressed != null)
+                IconButton(
+                  onPressed: widget.onFilterPressed,
+                  icon: Icon(
+                    Icons.filter_list,
+                    color: AppColors.primary,
+                    size: 20.sp,
+                  ),
+                ),
+            ],
+          ),
+
+          contentPadding: EdgeInsets.symmetric(
+            vertical: 14.h,
+            horizontal: 12.w,
+          ),
+
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12.r),
+            borderSide: BorderSide.none,
+          ),
         ),
       ),
     );

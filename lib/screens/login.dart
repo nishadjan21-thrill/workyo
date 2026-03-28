@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:workyo/l10n/app_localizations.dart';
 import 'package:workyo/widgets/continuebutton.dart';
 import 'package:workyo/widgets/text_field.dart';
 import 'package:workyo/services/auth_service.dart';
 
-import '../theme/app_spacing.dart';
 import '../theme/app_textstyles.dart';
 import '../theme/app_colors.dart';
 
@@ -35,7 +34,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _handleLogin() async {
     setState(() => isLoading = true);
 
-    final user = await authService.logIn(
+    final error = await authService.logIn(
       emailController.text.trim(),
       passwordController.text.trim(),
     );
@@ -44,11 +43,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() => isLoading = false);
 
-    if (user != null) {
-      context.go('/dashboard');
+    if (error == null) {
+      context.go('/workerslist');
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Log in failed')),
+        SnackBar(
+          content: Text(error, style: TextStyle(fontSize: 14.sp)),
+        ),
       );
     }
   }
@@ -61,57 +62,56 @@ class _LoginScreenState extends State<LoginScreen> {
       backgroundColor: Colors.transparent,
       body: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20), // ✅ spacing fix
+          padding: EdgeInsets.symmetric(horizontal: 20.w),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               SizedBox(height: height * 0.06),
 
               Center(
-                child: Text("Yo", style: AppTextStyles.header),
+                child: Text(
+                  "Workyo",
+                  style: TextStyle(fontFamily: 'Carter-One', fontSize: 28.sp),
+                ),
               ),
 
-              AppSpacing.section,
+              SizedBox(height: 24.h),
 
               Center(
                 child: Text(
                   AppLocalizations.of(context)!.logIn,
-                  style: AppTextStyles.title,
+                  style: AppTextStyles.title.copyWith(fontSize: 20.sp),
                 ),
               ),
 
-              AppSpacing.section,
+              SizedBox(height: 24.h),
 
-              // ✅ Premium Email Field
               PremiumTextField(
-                hint: "Enter your email",
+                hint: AppLocalizations.of(context)!.enterYourEmail,
                 controller: emailController,
                 icon: Icons.email,
               ),
 
-              AppSpacing.small,
+              SizedBox(height: 12.h),
 
-              // ✅ Premium Password Field
               PremiumTextField(
-                hint: "Enter your password",
+                hint: AppLocalizations.of(context)!.enterPassword,
                 controller: passwordController,
                 icon: Icons.lock,
                 obscureText: true,
               ),
 
-              AppSpacing.small,
+              SizedBox(height: 12.h),
 
               TextButton(
-                onPressed: () {
-                  _showResetDialog();
-                },
-                child: const Text(
-                  "Forgot password?",
-                  style: TextStyle(color: AppColors.clr1),
+                onPressed: _showResetDialog,
+                child: Text(
+                  AppLocalizations.of(context)!.forgotPassword,
+                  style: TextStyle(color: AppColors.clr1, fontSize: 14.sp),
                 ),
               ),
 
-              AppSpacing.small,
+              SizedBox(height: 8.h),
 
               TextButton(
                 onPressed: () {
@@ -119,19 +119,17 @@ class _LoginScreenState extends State<LoginScreen> {
                 },
                 child: Text(
                   AppLocalizations.of(context)!.createAccount,
-                  style: TextStyle(color: AppColors.clr1),
+                  style: TextStyle(color: AppColors.clr1, fontSize: 14.sp),
                 ),
               ),
 
+              SizedBox(height: 16.h),
+
               ContinueButton(
                 text: isLoading
-                    ? "Please wait..."
+                    ? AppLocalizations.of(context)!.pleaseWait
                     : AppLocalizations.of(context)!.logIn,
-                onPressed: isLoading
-                    ? null
-                    : () async {
-                        await _handleLogin();
-                      },
+                onPressed: isLoading ? null : _handleLogin,
               ),
 
               SizedBox(height: height * 0.02),
@@ -150,13 +148,13 @@ class _LoginScreenState extends State<LoginScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          backgroundColor: Colors.black, // 🔥 match theme
-          title: const Text(
-            "Reset Password",
-            style: TextStyle(color: Colors.white),
+          backgroundColor: Colors.black,
+          title: Text(
+            AppLocalizations.of(context)!.resetPassword,
+            style: TextStyle(color: Colors.white, fontSize: 16.sp),
           ),
           content: PremiumTextField(
-            hint: "Enter your email",
+            hint: AppLocalizations.of(context)!.enterYourEmail,
             controller: emailController,
             icon: Icons.email,
           ),
@@ -165,23 +163,31 @@ class _LoginScreenState extends State<LoginScreen> {
               onPressed: () {
                 if (mounted) Navigator.pop(context);
               },
-              child: const Text("Cancel", style: TextStyle(color: Colors.white70)),
+              child: Text(
+                AppLocalizations.of(context)!.cancel,
+                style: TextStyle(color: Colors.white70, fontSize: 14.sp),
+              ),
             ),
             TextButton(
               onPressed: () async {
                 await authService.resetPassword(emailController.text.trim());
 
                 if (mounted) {
-                  Navigator.pop(context); // Close dialog
+                  Navigator.pop(context);
 
                   ScaffoldMessenger.of(this.context).showSnackBar(
-                    const SnackBar(content: Text("Password reset email sent")),
+                    SnackBar(
+                      content: Text(
+                        AppLocalizations.of(context)!.resetEmailSent,
+                        style: TextStyle(fontSize: 14.sp),
+                      ),
+                    ),
                   );
                 }
               },
-              child: const Text(
-                "Send",
-                style: TextStyle(color: AppColors.clr1),
+              child: Text(
+                AppLocalizations.of(context)!.send,
+                style: TextStyle(color: AppColors.clr1, fontSize: 14.sp),
               ),
             ),
           ],

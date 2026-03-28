@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import 'package:workyo/l10n/app_localizations.dart';
 import 'package:workyo/providers/languageprovider.dart';
@@ -11,8 +12,10 @@ import 'firebase_options.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
   final languageProvider = LanguageProvider();
   await languageProvider.loadSavedLocale();
+
   runApp(
     ChangeNotifierProvider.value(
       value: languageProvider,
@@ -24,44 +27,47 @@ void main() async {
 class Workyo extends StatelessWidget {
   const Workyo({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return Consumer<LanguageProvider>(
       builder: (context, languageProvider, _) {
-        return  MaterialApp.router(
-  routerConfig: appRouter,
+        return ScreenUtilInit(
+          designSize: const Size(375, 812), // 📱 base design (important)
+          minTextAdapt: true,
+          splitScreenMode: true,
+          builder: (_, child) {
+            return MaterialApp.router(
+              routerConfig: appRouter,
 
-  builder: (context, child) {
-    return AppBackgroundWrapper(child: child!);
-  },
+              builder: (context, child) {
+                return AppBackgroundWrapper(child: child!);
+              },
 
-  locale: languageProvider.locale,
-  supportedLocales: const [
-    Locale('en'),
-    Locale('ml'),
-    Locale('hi')
-  ],
+              locale: languageProvider.locale,
+              supportedLocales: const [
+                Locale('en'),
+                Locale('ml'),
+                Locale('hi'),
+              ],
 
-  localizationsDelegates: [
-    AppLocalizations.delegate,
-    GlobalMaterialLocalizations.delegate,
-    GlobalWidgetsLocalizations.delegate,
-    GlobalCupertinoLocalizations.delegate,
-  ],
+              localizationsDelegates: const [
+                AppLocalizations.delegate,
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
 
-  title: 'Workyo',
+              title: 'Workyo',
 
-  theme: ThemeData(
-    primaryColor: Colors.yellowAccent,
-    fontFamily: 'ChelseaMarket',
-
-    scaffoldBackgroundColor: Colors.transparent, // ✅ IMPORTANT
-  ),
-);
+              theme: ThemeData(
+                primaryColor: Colors.yellowAccent,
+                fontFamily: 'ChelseaMarket',
+                scaffoldBackgroundColor: Colors.transparent,
+              ),
+            );
+          },
+        );
       },
     );
   }
 }
-
-

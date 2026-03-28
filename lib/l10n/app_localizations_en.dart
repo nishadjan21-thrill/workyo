@@ -130,4 +130,79 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get location => 'Location';
+
+  @override
+  String get registerasaworker => 'Register as a Worker';
+
+  @override
+  String get phoneNumberNotAvailable => 'Phone number not available';
+
+  @override
+  String get cannotMakeCall => 'Cannot make call';
+
+  @override
+  String get call => 'Call';
+
+  @override
+  String get jobsOffered => 'Jobs Offered';
+
+  @override
+  String get logInrequired => 'Login required';
+
+  @override
+  String get reviewSubmitted => 'Review submitted';
+
+  @override
+  String get rateWorker => 'Rate Worker';
+
+  @override
+  String get writeReview => 'Write a review';
+
+  @override
+  String get submit => 'Submit';
+
+  @override
+  String get youCannotRateYourself => 'You cannot rate yourself';
+
+  @override
+  String get youAlreadyReviewedThisWorker => 'You have already reviewed this worker';
+
+  @override
+  String get resetEmailSent => 'Password reset email sent';
+
+  @override
+  String get send => 'Send';
+
+  @override
+  String get cancel => 'Cancel';
+
+  @override
+  String get enterYourEmail => 'Enter your email';
+
+  @override
+  String get resetPassword => 'Reset Password';
+
+  @override
+  String get pleaseWait => 'Please wait...';
+
+  @override
+  String get loginFailed => 'Login failed';
+
+  @override
+  String get phone => 'Phone';
+
+  @override
+  String get payType => 'Pay Type';
+
+  @override
+  String get signUpFailled => 'Sign up failed';
+
+  @override
+  String get enterPassword => 'Enter your password';
+
+  @override
+  String get enterEmail => 'Enter your email';
+
+  @override
+  String get forgotPassword => 'Forgot Password?';
 }

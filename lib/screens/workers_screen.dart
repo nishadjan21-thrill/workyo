@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:workyo/screens/workerdetails_screen.dart';
 import 'package:workyo/widgets/worker_search.dart';
-
 
 class WorkersListScreen extends StatefulWidget {
   const WorkersListScreen({super.key});
@@ -17,8 +17,6 @@ class _WorkersListScreenState extends State<WorkersListScreen> {
   final FirebaseFirestore db = FirebaseFirestore.instance;
 
   String searchQuery = "";
-  String? selectedJob;
-  String sortBy = "distance";
   Timer? debounce;
 
   double? userLat;
@@ -27,49 +25,32 @@ class _WorkersListScreenState extends State<WorkersListScreen> {
   final Map<String, double> distanceCache = {};
   Map<String, List<Map<String, dynamic>>> jobsByWorker = {};
 
+  bool isJobsLoading = true;
+
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      getLocation();
-    });
-    loadAllJobs(); // fetch jobs from subcollections
+    getLocation();
+    loadAllJobs();
   }
 
+  /// ✅ LOCATION
   Future<void> getLocation() async {
     try {
-      // 1️⃣ Check if location service is enabled
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Location services are disabled")));
-        }
-        return;
-      }
+      if (!serviceEnabled) return;
 
-      // 2️⃣ Check permission
       LocationPermission permission = await Geolocator.checkPermission();
 
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
       }
 
-      // 3️⃣ Handle denied cases
-      if (permission == LocationPermission.denied) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Location permission denied")));
-        }
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
         return;
       }
 
-      if (permission == LocationPermission.deniedForever) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Location permission permanently denied")));
-        }
-        return;
-      }
-
-      // 4️⃣ Get location safely
       Position pos = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
@@ -79,15 +60,13 @@ class _WorkersListScreenState extends State<WorkersListScreen> {
         userLng = pos.longitude;
       });
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Location error: $e")));
-      }
+      debugPrint("Location error: $e");
     }
   }
 
-  /// ✅ Fetch jobs from each worker's subcollection
+  /// ✅ LOAD JOBS
   Future<void> loadAllJobs() async {
-    jobsByWorker = {};
+    jobsByWorker.clear();
 
     final workersSnapshot = await db.collection("workers").get();
 
@@ -95,30 +74,33 @@ class _WorkersListScreenState extends State<WorkersListScreen> {
       final workerId = workerDoc.id;
 
       final jobsSnapshot = await db
-          .collection("workers")
-          .doc(workerId)
           .collection("jobs")
+          .where("workerId", isEqualTo: workerId)
           .get();
 
-      final jobs = jobsSnapshot.docs.map((e) => e.data()).toList();
-
-      jobsByWorker[workerId] = jobs;
+      jobsByWorker[workerId] = jobsSnapshot.docs.map((e) => e.data()).toList();
     }
 
-    setState(() {});
+    setState(() {
+      isJobsLoading = false;
+    });
   }
 
+  /// ✅ DEBOUNCE SEARCH
   void onSearchChanged(String value) {
     if (debounce?.isActive ?? false) debounce!.cancel();
-    debounce = Timer(const Duration(milliseconds: 500), () {
+
+    debounce = Timer(const Duration(milliseconds: 400), () {
       setState(() {
         searchQuery = value.toLowerCase();
       });
     });
   }
 
+  /// ✅ DISTANCE
   double calculateDistance(Map<String, dynamic> worker) {
     if (userLat == null || userLng == null) return 0.0;
+
     final id = worker["uid"];
     final lat = worker["latitude"];
     final lng = worker["longitude"];
@@ -133,213 +115,191 @@ class _WorkersListScreenState extends State<WorkersListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(backgroundColor: Colors.transparent,
-      body: SizedBox.expand(
-        child: Column(
-          children: [
-            const SizedBox(height: 20),
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: Column(
+        children: [
+          SizedBox(height: 20.h),
 
-            // Search field
-           WorkersSearchBar(
-  onSearchChanged: (query) {
-    setState(() {
-      searchQuery = query.toLowerCase();
-    });
-  },
-  onFilterPressed: () {
-    // open filter modal or dropdown
-  },
-),
-            const SizedBox(height: 20),
+          /// ✅ SEARCH BAR
+          WorkersSearchBar(
+            onSearchChanged: onSearchChanged,
+            onFilterPressed: () {},
+          ),
 
-            Expanded(
-              child: StreamBuilder<QuerySnapshot>(
-                stream: db.collection("workers").snapshots(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
+          SizedBox(height: 20.h),
 
-                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                    return const Center(child: Text("No workers found"));
-                  }
+          Expanded(
+            child: StreamBuilder<QuerySnapshot>(
+              stream: db.collection("workers").snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting ||
+                    isJobsLoading) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-                  final workers = snapshot.data!.docs.map((e) {
-                    final data = e.data() as Map<String, dynamic>;
-                    data["uid"] = e.id;
-                    return data;
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return Center(
+                    child: Text(
+                      "No workers found",
+                      style: TextStyle(fontSize: 14.sp),
+                    ),
+                  );
+                }
+
+                final workers = snapshot.data!.docs.map((e) {
+                  final data = e.data() as Map<String, dynamic>;
+                  data["uid"] = e.id;
+                  return data;
+                }).toList();
+
+                List<Map<String, dynamic>> filteredWorkers = List.from(workers);
+
+                /// SEARCH
+                if (searchQuery.isNotEmpty) {
+                  filteredWorkers = filteredWorkers.where((w) {
+                    final name = (w["name"] ?? "").toString().toLowerCase();
+
+                    final workerJobs = (jobsByWorker[w["uid"]] ?? [])
+                        .map((j) => (j['jobType'] ?? "").toString())
+                        .join(" ")
+                        .toLowerCase();
+
+                    return name.contains(searchQuery) ||
+                        workerJobs.contains(searchQuery);
                   }).toList();
+                }
 
-                  List<Map<String, dynamic>> filteredWorkers =
-                      List.from(workers);
+                /// SORT BY DISTANCE
+                filteredWorkers.sort(
+                  (a, b) =>
+                      calculateDistance(a).compareTo(calculateDistance(b)),
+                );
 
-                  // 🚫 SEARCH (disabled for now)
-                  /*
-                  if (searchQuery.isNotEmpty) {
-                    filteredWorkers = filteredWorkers.where((w) {
-                      final name = (w["name"] ?? "").toLowerCase();
-                      final workerJobs = (jobsByWorker[w["uid"]] ?? [])
-                          .map((j) => j['jobType'])
-                          .join(" ")
-                          .toLowerCase();
-                      return name.contains(searchQuery) ||
-                          workerJobs.contains(searchQuery);
-                    }).toList();
-                  }
-                  */
+                return ListView.builder(
+                  itemCount: filteredWorkers.length,
+                  itemBuilder: (context, index) {
+                    final w = filteredWorkers[index];
+                    final workerJobs = jobsByWorker[w["uid"]] ?? [];
 
-                  // 🚫 FILTER (disabled)
-                  /*
-                  if (selectedJob != null) {
-                    filteredWorkers = filteredWorkers.where((w) {
-                      final workerJobs = (jobsByWorker[w["uid"]] ?? [])
-                          .map((j) => j['jobType'])
-                          .toList();
-                      return workerJobs
-                          .map((e) => e.toLowerCase())
-                          .contains(selectedJob!.toLowerCase());
-                    }).toList();
-                  }
-                  */
+                    String? image = w["profileImage"];
+                    bool isValidImage =
+                        image != null &&
+                        image.isNotEmpty &&
+                        image.startsWith("http");
 
-                  // 🚫 SORT (disabled)
-                  /*
-                  if (sortBy == "distance") {
-                    filteredWorkers.sort((a, b) =>
-                        calculateDistance(a).compareTo(calculateDistance(b)));
-                  }
-                  */
-
-                  return ListView.builder(
-                    itemCount: filteredWorkers.length,
-                    itemBuilder: (context, index) {
-                      final w = filteredWorkers[index];
-                      final workerJobs = jobsByWorker[w["uid"]] ?? [];
-
-                      return InkWell(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => WorkerDetailsScreen(
-                                worker: w,
-                                jobs: workerJobs,
-                                userLat: userLat,
-                                userLng: userLng,
-                              ),
+                    return InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => WorkerDetailsScreen(
+                              worker: w,
+                              jobs: workerJobs,
+                              userLat: userLat,
+                              userLng: userLng,
                             ),
-                          );
-                        },
-                        child: Container(
-                          margin: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
                           ),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[900],
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.grey[700]!),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black,
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(12),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                        );
+                      },
+                      child: Container(
+                        margin: EdgeInsets.symmetric(
+                          horizontal: 16.w,
+                          vertical: 8.h,
+                        ),
+                        padding: EdgeInsets.all(12.w),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[900],
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
                               children: [
-                                // Worker info
-                                Row(
-                                  children: [
-                                    CircleAvatar(
-                                      radius: 30,
-                                      backgroundImage:
-                                          w["profileImage"] != null
-                                              ? NetworkImage(
-                                                  w["profileImage"])
-                                              : null,
-                                      child: w["profileImage"] == null
-                                          ? const Icon(Icons.person, size: 30)
-                                          : null,
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            w["name"] ?? "",
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            w["locationName"] ?? "",
-                                            style: const TextStyle(
-                                              color: Colors.white70,
-                                              fontSize: 14,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            "${calculateDistance(w).toStringAsFixed(1)} km away • ⭐ ${w["rating"] ?? 0}",
-                                            style: const TextStyle(
-                                              color: Colors.white70,
-                                              fontSize: 14,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
+                                CircleAvatar(
+                                  radius: 30.r,
+                                  backgroundImage: isValidImage
+                                      ? NetworkImage(image)
+                                      : null,
+                                  child: !isValidImage
+                                      ? Icon(Icons.person, size: 24.sp)
+                                      : null,
                                 ),
 
-                                const SizedBox(height: 12),
+                                SizedBox(width: 12.w),
 
-                                // Jobs
-                                Wrap(
-                                  spacing: 8,
-                                  runSpacing: 6,
-                                  children: workerJobs.map((job) {
-                                    return Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 10,
-                                        vertical: 6,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey[800],
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Text(
-                                        "${job['jobType']} • ₹${job['expectedSalary'] ?? '-'} ${job['salaryType'] ?? ''}",
-                                        style: const TextStyle(
-                                          color: Colors.white70,
-                                          fontSize: 13,
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        w["name"] ?? "",
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16.sp,
+                                          fontWeight: FontWeight.bold,
                                         ),
                                       ),
-                                    );
-                                  }).toList(),
+
+                                      Text(
+                                        w["locationName"] ?? "",
+                                        style: TextStyle(
+                                          color: Colors.white70,
+                                          fontSize: 13.sp,
+                                        ),
+                                      ),
+
+                                      Text(
+                                        "${calculateDistance(w).toStringAsFixed(1)} km • ⭐ ${w["rating"] ?? 0}",
+                                        style: TextStyle(
+                                          color: Colors.white70,
+                                          fontSize: 12.sp,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ],
                             ),
-                          ),
+
+                            SizedBox(height: 10.h),
+
+                            ///  JOB TAGS
+                            Wrap(
+                              spacing: 8.w,
+                              runSpacing: 6.h,
+                              children: workerJobs.map((job) {
+                                return Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 10.w,
+                                    vertical: 6.h,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[800],
+                                    borderRadius: BorderRadius.circular(8.r),
+                                  ),
+                                  child: Text(
+                                    "${job['jobType']} • ₹${job['expectedSalary'] ?? '-'} ${job['salaryType'] ?? ''}",
+                                    style: TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 12.sp,
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ],
                         ),
-                      );
-                    },
-                  );
-                },
-              ),
+                      ),
+                    );
+                  },
+                );
+              },
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
